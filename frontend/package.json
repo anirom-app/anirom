@@ -23,6 +23,7 @@
     "start": "next start",
     "lint": "eslint",
     "test": "jest",
+    "postinstall": "node scripts/extract-mpv.js",
     "build:go": "cd go-engine && go build -o ../bin/go-engine.exe",
     "electron": "wait-on tcp:3000 && set NODE_ENV=development&& electron .",
     "dev:electron": "concurrently -k \"npm run dev\" \"npm run electron\"",
