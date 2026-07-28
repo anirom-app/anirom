@@ -39,7 +39,7 @@ func main() {
 }
 
 func streamHandler(w http.ResponseWriter, r *http.Request) {
-	
+
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 
 	magnet := r.URL.Query().Get("magnet")
