@@ -11,6 +11,15 @@ import { fetchTorrentioStreams } from "@/services/torrentio";
 import { api } from "@/services/api";
 import { useAddonStore } from "@/hooks/useAddonStore";
 
+declare global {
+  interface Window {
+    api?: {
+      playVideo: (payload: any) => Promise<any>;
+      onPlayerClosed: (callback: () => void) => () => void;
+    };
+  }
+}
+
 import { AnimeLoadingScreen } from "@/components/AnimeLoadingScreen";
 
 export default function EpisodePlayer() {
@@ -31,19 +40,12 @@ export default function EpisodePlayer() {
   const [animeTitle, setAnimeTitle] = useState("");
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const electronRequire = (window as any).require || (window as any).top?.require;
-      if (electronRequire) {
-        const { ipcRenderer } = electronRequire('electron');
-        const handlePlayerClosed = () => {
-          console.log("Recebido evento player-closed, desbloqueando UI.");
-          setIsPlaying(false);
-        };
-        ipcRenderer.on('player-closed', handlePlayerClosed);
-        return () => {
-          ipcRenderer.removeListener('player-closed', handlePlayerClosed);
-        };
-      }
+    if (typeof window !== 'undefined' && window.api) {
+      const unsubscribe = window.api.onPlayerClosed(() => {
+        console.log("Recebido evento player-closed, desbloqueando UI.");
+        setIsPlaying(false);
+      });
+      return unsubscribe;
     }
   }, []);
 
@@ -157,15 +159,13 @@ export default function EpisodePlayer() {
     
     try {
       if (typeof window !== 'undefined') {
-        const electronRequire = (window as any).require || (window as any).top.require;
-        if (electronRequire) {
-          const { ipcRenderer } = electronRequire('electron');
+        if (window.api) {
           console.log("Enviando evento IPC play-video...");
           setIsPlaying(true);
           
           const fullTitle = `${animeTitle || "Anime"} - Episódio ${episodeNumber}`;
           
-          ipcRenderer.invoke('play-video', { url: streamUrl, title: fullTitle, tmdbId, animeTitle, episodeNumber }).then((result: any) => {
+          window.api.playVideo({ url: streamUrl, title: fullTitle, tmdbId, animeTitle, episodeNumber }).then((result: any) => {
             console.log("Resultado do IPC:", result);
           }).catch((err: any) => {
             console.error("Erro no IPC:", err);
@@ -173,7 +173,7 @@ export default function EpisodePlayer() {
             alert("Erro ao chamar MPV: " + err.message);
           });
         } else {
-          console.warn("window.require não encontrado.");
+          console.warn("window.api não encontrado.");
           alert("Player nativo requer o aplicativo Electron.");
         }
       }
