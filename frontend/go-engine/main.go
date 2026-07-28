@@ -33,11 +33,21 @@ func main() {
 	defer client.Close()
 
 	http.HandleFunc("/api/stream", streamHandler)
+	http.HandleFunc("/api/stop", stopHandler)
 
 	fmt.Println("[Go-Engine] Servidor P2P nativo rodando na porta 8080")
 	if err := http.ListenAndServe(":8080", nil); err != nil {
 		log.Fatalf("failed to start server: %v", err)
 	}
+}
+
+func stopHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	for _, t := range client.Torrents() {
+		t.Drop()
+	}
+	fmt.Println("[Go-Engine] Todos os torrents foram parados e descartados")
+	w.WriteHeader(http.StatusOK)
 }
 
 func streamHandler(w http.ResponseWriter, r *http.Request) {
@@ -55,7 +65,6 @@ func streamHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	defer t.Drop() // Limpa torrent da memoria quando fechar stream HTTP
 
 	fmt.Printf("[Go-Engine] Resolving magnet...\n")
 

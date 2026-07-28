@@ -189,8 +189,10 @@ function createWindow() {
       });
       
       mpvProcess.on('close', (code) => {
-        console.log(`[MPV] Fechado com código ${code}. Limpando cache do torrent...`);
+        console.log(`[MPV] Fechado com código ${code}. Solicitando parada do torrent...`);
         
+        fetch("http://localhost:8080/api/stop").catch(e => console.error("Falha ao parar torrent:", e));
+
         setTimeout(() => {
           clearTorrentCacheSync();
         }, 1000);
