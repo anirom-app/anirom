@@ -22,7 +22,9 @@ func main() {
 	cfg := torrent.NewDefaultClientConfig()
 	cfg.DataDir = filepath.Join(os.TempDir(), "anirom_torrents")
 	cfg.NoDefaultPortForwarding = true // Disable UPnP to avoid router 500 errors
-	// Reduce peer max connections if needed, but defaults are usually fine
+	// Tuned connections to prevent router crashes and memory leaks
+	cfg.EstablishedConnsPerTorrent = 50
+	cfg.HalfOpenConnsPerTorrent = 15
 
 	client, err = torrent.NewClient(cfg)
 	if err != nil {
@@ -53,6 +55,7 @@ func streamHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	defer t.Drop() // Limpa torrent da memoria quando fechar stream HTTP
 
 	fmt.Printf("[Go-Engine] Resolving magnet...\n")
 
