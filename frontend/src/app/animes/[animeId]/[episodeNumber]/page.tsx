@@ -165,7 +165,7 @@ export default function EpisodePlayer() {
           
           const fullTitle = `${animeTitle || "Anime"} - Episódio ${episodeNumber}`;
           
-          ipcRenderer.invoke('play-video', { url: streamUrl, title: fullTitle }).then((result: any) => {
+          ipcRenderer.invoke('play-video', { url: streamUrl, title: fullTitle, tmdbId, animeTitle, episodeNumber }).then((result: any) => {
             console.log("Resultado do IPC:", result);
           }).catch((err: any) => {
             console.error("Erro no IPC:", err);
