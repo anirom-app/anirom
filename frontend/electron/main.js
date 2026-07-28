@@ -44,15 +44,25 @@ async function fetchAniSkip(animeTitle, episodeNumber, ipcSocketPath) {
     const endTime = op.interval.endTime;
     console.log(`[AniSkip] Abertura encontrada: ${startTime} - ${endTime}`);
     
-    setTimeout(() => {
+    const payload = JSON.stringify({ "command": ["script-message", "aniskip", startTime.toString(), endTime.toString()] }) + "\n";
+    
+    function connectWithRetry(retries = 10, delay = 500) {
       const client = net.connect(ipcSocketPath, () => {
-        const payload = JSON.stringify({ "command": ["script-message", "aniskip", startTime.toString(), endTime.toString()] }) + "\n";
         client.write(payload);
         client.end();
         console.log("[AniSkip] Comando IPC enviado para o MPV!");
       });
-      client.on('error', (err) => console.log("[AniSkip] Erro IPC (Socket):", err.message));
-    }, 2000);
+      client.on('error', (err) => {
+        if (retries > 0) {
+          console.log(`[AniSkip] Erro IPC (Socket): ${err.message}. Tentando novamente em ${delay}ms...`);
+          setTimeout(() => connectWithRetry(retries - 1, delay), delay);
+        } else {
+          console.log("[AniSkip] Falha final IPC (Socket):", err.message);
+        }
+      });
+    }
+    
+    connectWithRetry();
     
   } catch (err) {
     console.log("[AniSkip] Erro interno:", err.message);
@@ -106,9 +116,10 @@ function createWindow() {
     title: "Anirom",
     icon: path.join(__dirname, '../build/anirom-icon.ico'),
     webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false,
-      webSecurity: false
+      nodeIntegration: false,
+      contextIsolation: true,
+      webSecurity: true,
+      preload: path.join(__dirname, 'preload.js')
     }
   });
 
@@ -178,21 +189,12 @@ function createWindow() {
       });
       
       mpvProcess.on('close', (code) => {
-        console.log(`[MPV] Fechado com código ${code}. Reiniciando Go Engine para limpar downloads...`);
-        if (goEngineProcess) {
-          const oldProcess = goEngineProcess;
-          goEngineProcess = null;
-          
-          oldProcess.on('exit', () => {
-            console.log("[Go Engine] Processo anterior encerrado. Limpando cache e iniciando novo...");
-            clearTorrentCacheSync();
-            startGoEngine();
-          });
-          oldProcess.kill();
-        } else {
+        console.log(`[MPV] Fechado com código ${code}. Limpando cache do torrent...`);
+        
+        setTimeout(() => {
           clearTorrentCacheSync();
-          startGoEngine();
-        }
+        }, 1000);
+
         if (mainWindow && !mainWindow.isDestroyed()) {
           mainWindow.webContents.send('player-closed');
         }
