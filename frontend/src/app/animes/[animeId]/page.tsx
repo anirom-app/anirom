@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Loader2, Play, Plus, Info } from "lucide-react";
+import { Loader2, Play, Plus, Info, Check, Bookmark } from "lucide-react";
 import { getAnimeDetails, getAnimeEpisodes } from "@/services/tmdb";
+import { toggleSavedAnime, getSavedAnimes } from "@/services/collections";
+import { useAuthStore } from "@/hooks/useAuthStore";
 import { Navbar } from "@/components/Navbar";
 import { Great_Vibes } from "next/font/google";
 
@@ -18,6 +20,9 @@ export default function AnimeDetailsPage() {
   const [episodes, setEpisodes] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeSeason, setActiveSeason] = useState(1);
+  const [isSaved, setIsSaved] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const { token } = useAuthStore();
 
   useEffect(() => {
     async function loadData() {
@@ -28,6 +33,11 @@ export default function AnimeDetailsPage() {
         
         const eps = await getAnimeEpisodes(tmdbId, activeSeason);
         setEpisodes(eps);
+        
+        if (token) {
+          const savedList = await getSavedAnimes();
+          setIsSaved(savedList.some(s => s.animeId === tmdbId));
+        }
       } catch (error) {
         console.error("Erro ao carregar dados do TMDb:", error);
       } finally {
@@ -35,7 +45,23 @@ export default function AnimeDetailsPage() {
       }
     }
     loadData();
-  }, [tmdbId, activeSeason]);
+  }, [tmdbId, activeSeason, token]);
+
+  const handleToggleSave = async () => {
+    if (!token) {
+      router.push('/login');
+      return;
+    }
+    try {
+      setIsSaving(true);
+      await toggleSavedAnime(tmdbId);
+      setIsSaved(!isSaved);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   if (isLoading && !anime) {
     return (
@@ -124,8 +150,16 @@ export default function AnimeDetailsPage() {
               <Play className="w-5 h-5 fill-black" />
               Play S{activeSeason} E{episodes.length > 0 ? episodes[0].episode_number : '1'}
             </button>
-            <button className="w-12 h-12 rounded-full border border-white/20 bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors">
-              <Plus className="w-5 h-5" />
+            <button 
+              onClick={handleToggleSave}
+              disabled={isSaving}
+              className={`w-12 h-12 rounded-full border flex items-center justify-center transition-colors ${
+                isSaved 
+                  ? 'border-primary bg-primary/20 text-primary hover:bg-primary/30' 
+                  : 'border-white/20 bg-white/10 hover:bg-white/20'
+              }`}
+            >
+              {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : isSaved ? <Check className="w-5 h-5" /> : <Bookmark className="w-5 h-5" />}
             </button>
             <button className="w-12 h-12 rounded-full border border-white/20 bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors">
               <Info className="w-5 h-5" />
