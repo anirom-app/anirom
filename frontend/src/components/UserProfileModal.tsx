@@ -55,7 +55,7 @@ export function UserProfileModal({ children }: UserProfileModalProps) {
       toast({
         variant: "destructive",
         title: "Erro na imagem",
-        description: result.error.errors[0].message,
+        description: result.error.issues[0].message,
       });
       return;
     }

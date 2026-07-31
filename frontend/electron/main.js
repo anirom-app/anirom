@@ -3,16 +3,79 @@ const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
+const net = require('net');
 
 let mainWindow;
 let goEngineProcess = null;
+
+async function fetchAniSkip(animeTitle, episodeNumber, ipcSocketPath) {
+  if (!animeTitle || !episodeNumber) return;
+  try {
+    console.log(`[AniSkip] Buscando MAL ID para: ${animeTitle}`);
+    const anilistQuery = {
+      query: "query ($search: String) { Media(search: $search, type: ANIME) { idMal } }",
+      variables: { search: animeTitle }
+    };
+    
+    // In node 18+, fetch is available globally. If not, this might fail, but modern electron has it.
+    const anilistRes = await fetch("https://graphql.anilist.co", {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(anilistQuery)
+    });
+    
+    if (!anilistRes.ok) return console.log("[AniSkip] Falha ao consultar AniList");
+    const anilistData = await anilistRes.json();
+    const malId = anilistData?.data?.Media?.idMal;
+    
+    if (!malId) return console.log("[AniSkip] MAL ID não encontrado para o anime");
+    
+    console.log(`[AniSkip] MAL ID encontrado: ${malId}. Buscando tempos de skip...`);
+    const aniskipRes = await fetch(`https://api.aniskip.com/v2/skip-times/${malId}/${episodeNumber}?types[]=op&types[]=ed&episodeLength=0`);
+    if (!aniskipRes.ok) return console.log("[AniSkip] Falha ao consultar AniSkip API");
+    
+    const aniskipData = await aniskipRes.json();
+    if (!aniskipData.found) return console.log("[AniSkip] Nenhum skip time encontrado");
+    
+    const op = aniskipData.results.find(r => r.skipType === 'op');
+    if (!op) return console.log("[AniSkip] Nenhuma abertura encontrada");
+    
+    const startTime = op.interval.startTime;
+    const endTime = op.interval.endTime;
+    console.log(`[AniSkip] Abertura encontrada: ${startTime} - ${endTime}`);
+    
+    const payload = JSON.stringify({ "command": ["script-message", "aniskip", startTime.toString(), endTime.toString()] }) + "\n";
+    
+    function connectWithRetry(retries = 10, delay = 500) {
+      const client = net.connect(ipcSocketPath, () => {
+        client.write(payload);
+        client.end();
+        console.log("[AniSkip] Comando IPC enviado para o MPV!");
+      });
+      client.on('error', (err) => {
+        if (retries > 0) {
+          console.log(`[AniSkip] Erro IPC (Socket): ${err.message}. Tentando novamente em ${delay}ms...`);
+          setTimeout(() => connectWithRetry(retries - 1, delay), delay);
+        } else {
+          console.log("[AniSkip] Falha final IPC (Socket):", err.message);
+        }
+      });
+    }
+    
+    connectWithRetry();
+    
+  } catch (err) {
+    console.log("[AniSkip] Erro interno:", err.message);
+  }
+}
+
 
 function clearTorrentCacheSync() {
   const dataDir = path.join(os.tmpdir(), "anirom_torrents");
   try {
     if (fs.existsSync(dataDir)) {
       console.log("[Electron] Limpando cache de torrents em:", dataDir);
-      fs.rmSync(dataDir, { recursive: true, force: true });
+      fs.rmSync(dataDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 500 });
     }
   } catch (err) {
     console.error("[Electron] Falha ao limpar cache de torrents:", err);
@@ -53,9 +116,10 @@ function createWindow() {
     title: "Anirom",
     icon: path.join(__dirname, '../build/anirom-icon.ico'),
     webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false,
-      webSecurity: false
+      nodeIntegration: false,
+      contextIsolation: true,
+      webSecurity: true,
+      preload: path.join(__dirname, 'preload.js')
     }
   });
 
@@ -67,7 +131,17 @@ function createWindow() {
   });
 
   ipcMain.handle('play-video', async (event, payload) => {
-    const { url: rawUrl, title } = typeof payload === 'string' ? { url: payload, title: 'Anirom Video' } : payload;
+    let rawUrl, title, tmdbId, animeTitle, episodeNumber;
+    if (typeof payload === 'string') {
+      rawUrl = payload;
+      title = 'Anirom Video';
+    } else {
+      rawUrl = payload.url;
+      title = payload.title;
+      tmdbId = payload.tmdbId;
+      animeTitle = payload.animeTitle;
+      episodeNumber = payload.episodeNumber;
+    }
     const url = typeof rawUrl === 'string' ? rawUrl : (rawUrl?.url || JSON.stringify(rawUrl));
     const isDev = process.env.NODE_ENV === 'development';
     let mpvPath;
@@ -83,9 +157,14 @@ function createWindow() {
 
     console.log(`[MPV] Inciando MPV com a URL: ${url}`);
     
+    const ipcSocketPath = process.platform === 'win32' 
+      ? '\\\\.\\pipe\\anirom-mpv-ipc-' + Date.now()
+      : path.join(os.tmpdir(), 'anirom-mpv-ipc-' + Date.now() + '.sock');
+
     try {
       const mpvArgs = [
         url,
+        `--input-ipc-server=${ipcSocketPath}`,
         `--force-media-title=${title}`,
         '--alang=por,pt,pt-BR,pt-br,en,eng,jpn,ja',
         '--slang=por,pt,pt-BR,pt-br,en,eng',
@@ -110,25 +189,21 @@ function createWindow() {
       });
       
       mpvProcess.on('close', (code) => {
-        console.log(`[MPV] Fechado com código ${code}. Reiniciando Go Engine para limpar downloads...`);
-        if (goEngineProcess) {
-          const oldProcess = goEngineProcess;
-          goEngineProcess = null;
-          
-          oldProcess.on('exit', () => {
-            console.log("[Go Engine] Processo anterior encerrado. Limpando cache e iniciando novo...");
-            clearTorrentCacheSync();
-            startGoEngine();
-          });
-          oldProcess.kill();
-        } else {
+        console.log(`[MPV] Fechado com código ${code}. Solicitando parada do torrent...`);
+        
+        fetch("http://localhost:8080/api/stop").catch(e => console.error("Falha ao parar torrent:", e));
+
+        setTimeout(() => {
           clearTorrentCacheSync();
-          startGoEngine();
-        }
+        }, 1000);
+
         if (mainWindow && !mainWindow.isDestroyed()) {
           mainWindow.webContents.send('player-closed');
         }
       });
+      
+      // Call AniSkip async, don't await so MPV starts immediately
+      fetchAniSkip(animeTitle, episodeNumber, ipcSocketPath);
       
       return true;
     } catch (e) {

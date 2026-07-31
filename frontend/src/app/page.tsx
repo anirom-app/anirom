@@ -18,8 +18,10 @@ import { api } from "@/services/api";
 import { Navbar } from "@/components/Navbar";
 import { AnimeCarousel } from "@/components/AnimeCarousel";
 import { Button } from "@/components/ui/button";
-import { Bookmark, Loader2 } from "lucide-react";
+import { Bookmark, Loader2, Check } from "lucide-react";
+import { toggleSavedAnime, getSavedAnimes } from "@/services/collections";
 import Link from "next/link";
+import { toast } from "@/hooks/use-toast";
 
 export default function Home() {
   const router = useRouter();
@@ -36,6 +38,8 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [isSurpriseLoading, setIsSurpriseLoading] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
+  const [savedAnimesIds, setSavedAnimesIds] = useState<string[]>([]);
+  const [isSavingHero, setIsSavingHero] = useState(false);
 
   useEffect(() => {
     setIsHydrated(true);
@@ -104,6 +108,14 @@ export default function Home() {
           
           setHeroAnimes(heroCandidates);
         }
+
+        try {
+          const savedList = await getSavedAnimes();
+          setSavedAnimesIds(savedList.map(s => s.animeId));
+          
+        } catch (e) {
+          console.error("Erro ao carregar animes salvos", e);
+        }
       } catch (error) {
         console.error("Erro ao carregar animes", error);
       } finally {
@@ -165,6 +177,33 @@ export default function Home() {
       console.error("Erro ao buscar anime surpresa", error);
     } finally {
       setIsSurpriseLoading(false);
+    }
+  };
+
+  const handleToggleSaveHero = async () => {
+    if (!token) return;
+    const currentAnime = heroAnimes[currentHeroIndex];
+    if (!currentAnime) return;
+    
+    try {
+      setIsSavingHero(true);
+      await toggleSavedAnime(currentAnime.id.toString());
+      const isSaved = savedAnimesIds.includes(currentAnime.id.toString());
+      
+      if (isSaved) {
+        setSavedAnimesIds(prev => prev.filter(id => id !== currentAnime.id.toString()));
+      } else {
+        setSavedAnimesIds(prev => [...prev, currentAnime.id.toString()]);
+      }
+      
+      toast({
+        title: `Anime ${!isSaved ? 'adicionado!' : 'removido!'}`,
+        description: `O anime ${currentAnime.name} foi ${!isSaved ? 'adicionado' : 'removido'} da sua lista.`,
+      });
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsSavingHero(false);
     }
   };
 
@@ -244,12 +283,20 @@ export default function Home() {
                     Mais Detalhes
                   </Button>
                 </Link>
-                <Link href={`/animes/${heroAnimes[currentHeroIndex].id}`}>
-                  <Button size="lg" variant="outline" className="w-full sm:w-auto gap-2 border-white/20 bg-black/40 backdrop-blur-md hover:bg-black/60 text-white font-bold px-8 h-12 rounded-full shadow-xl">
-                    <Bookmark className="w-5 h-5" />
-                    Assistir Agora
-                  </Button>
-                </Link>
+                <Button 
+                  size="lg" 
+                  variant="outline" 
+                  onClick={handleToggleSaveHero}
+                  disabled={isSavingHero}
+                  className={`w-full sm:w-auto gap-2 border-white/20 backdrop-blur-md text-white font-bold px-8 h-12 rounded-full shadow-xl transition-colors ${
+                    savedAnimesIds.includes(heroAnimes[currentHeroIndex]?.id?.toString())
+                      ? 'bg-primary/20 hover:bg-primary/30 border-primary'
+                      : 'bg-black/40 hover:bg-black/60'
+                  }`}
+                >
+                  {isSavingHero ? <Loader2 className="w-5 h-5 animate-spin" /> : savedAnimesIds.includes(heroAnimes[currentHeroIndex]?.id?.toString()) ? <Check className="w-5 h-5 text-primary" /> : <Bookmark className="w-5 h-5" />}
+                  {savedAnimesIds.includes(heroAnimes[currentHeroIndex]?.id?.toString()) ? 'Salvo' : 'Salvar'}
+                </Button>
               </div>
             </div>
 

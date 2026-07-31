@@ -22,7 +22,9 @@ func main() {
 	cfg := torrent.NewDefaultClientConfig()
 	cfg.DataDir = filepath.Join(os.TempDir(), "anirom_torrents")
 	cfg.NoDefaultPortForwarding = true // Disable UPnP to avoid router 500 errors
-	// Reduce peer max connections if needed, but defaults are usually fine
+	// Tuned connections to prevent router crashes and memory leaks
+	cfg.EstablishedConnsPerTorrent = 50
+	cfg.HalfOpenConnsPerTorrent = 15
 
 	client, err = torrent.NewClient(cfg)
 	if err != nil {
@@ -31,6 +33,7 @@ func main() {
 	defer client.Close()
 
 	http.HandleFunc("/api/stream", streamHandler)
+	http.HandleFunc("/api/stop", stopHandler)
 
 	fmt.Println("[Go-Engine] Servidor P2P nativo rodando na porta 8080")
 	if err := http.ListenAndServe(":8080", nil); err != nil {
@@ -38,8 +41,17 @@ func main() {
 	}
 }
 
+func stopHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	for _, t := range client.Torrents() {
+		t.Drop()
+	}
+	fmt.Println("[Go-Engine] Todos os torrents foram parados e descartados")
+	w.WriteHeader(http.StatusOK)
+}
+
 func streamHandler(w http.ResponseWriter, r *http.Request) {
-	
+
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 
 	magnet := r.URL.Query().Get("magnet")
