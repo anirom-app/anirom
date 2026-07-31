@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Bookmark, Loader2, Check } from "lucide-react";
 import { toggleSavedAnime, getSavedAnimes } from "@/services/collections";
 import Link from "next/link";
+import { toast } from "@/hooks/use-toast";
 
 export default function Home() {
   const router = useRouter();
@@ -111,6 +112,7 @@ export default function Home() {
         try {
           const savedList = await getSavedAnimes();
           setSavedAnimesIds(savedList.map(s => s.animeId));
+          
         } catch (e) {
           console.error("Erro ao carregar animes salvos", e);
         }
@@ -186,11 +188,18 @@ export default function Home() {
     try {
       setIsSavingHero(true);
       await toggleSavedAnime(currentAnime.id.toString());
-      if (savedAnimesIds.includes(currentAnime.id.toString())) {
+      const isSaved = savedAnimesIds.includes(currentAnime.id.toString());
+      
+      if (isSaved) {
         setSavedAnimesIds(prev => prev.filter(id => id !== currentAnime.id.toString()));
       } else {
         setSavedAnimesIds(prev => [...prev, currentAnime.id.toString()]);
       }
+      
+      toast({
+        title: `Anime ${!isSaved ? 'adicionado!' : 'removido!'}`,
+        description: `O anime ${currentAnime.name} foi ${!isSaved ? 'adicionado' : 'removido'} da sua lista.`,
+      });
     } catch (e) {
       console.error(e);
     } finally {

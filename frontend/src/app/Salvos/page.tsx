@@ -8,13 +8,14 @@ import { getAnimeDetails } from "@/services/tmdb";
 import { Navbar } from "@/components/Navbar";
 import { AnimeCard } from "@/components/AnimeCard";
 import { Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 export default function SalvosPage() {
   const router = useRouter();
   const { token } = useAuthStore();
   const [savedAnimes, setSavedAnimes] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-
+ 
   useEffect(() => {
     if (!token) {
       router.push("/login");
@@ -59,8 +60,8 @@ export default function SalvosPage() {
     <div className="min-h-screen bg-background text-foreground flex">
       <Navbar />
       
-      <main className="flex-1 ml-0 md:ml-20 relative min-h-screen overflow-x-hidden pt-24 px-6 md:px-16 pb-20">
-        <h1 className="text-4xl md:text-5xl font-bold mb-8 text-white">Meus Animes Salvos</h1>
+      <main className="flex-1 ml-0 md:ml-20 relative min-h-screen overflow-x-hidden pt-24 px-6 md:px-8 pb-20">
+        <h1 className="text-3xl  font-heading font-bold mb-8 text-white">Meus Animes Salvos</h1>
         
         {savedAnimes.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">

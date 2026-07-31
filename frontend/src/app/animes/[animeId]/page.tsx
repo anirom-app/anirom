@@ -8,6 +8,7 @@ import { toggleSavedAnime, getSavedAnimes } from "@/services/collections";
 import { useAuthStore } from "@/hooks/useAuthStore";
 import { Navbar } from "@/components/Navbar";
 import { Great_Vibes } from "next/font/google";
+import { useToast } from "@/hooks/use-toast";
 
 const vibes = Great_Vibes({ subsets: ["latin"], weight: ["400"] });
 
@@ -22,6 +23,7 @@ export default function AnimeDetailsPage() {
   const [activeSeason, setActiveSeason] = useState(1);
   const [isSaved, setIsSaved] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const {toast} = useToast();
   const { token } = useAuthStore();
 
   useEffect(() => {
@@ -56,6 +58,11 @@ export default function AnimeDetailsPage() {
       setIsSaving(true);
       await toggleSavedAnime(tmdbId);
       setIsSaved(!isSaved);
+      toast({
+        title: `Anime ${!isSaved ? 'adicionado!' : 'removido!'}`,
+        description: `O anime ${anime.name} foi ${!isSaved ? 'adicionado' : 'removido'} da sua lista.`,
+      })
+
     } catch (e) {
       console.error(e);
     } finally {
