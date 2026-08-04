@@ -110,7 +110,7 @@ export function AnimeDetailsModal({ isOpen, onOpenChange, anime }: AnimeDetailsM
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl bg-zinc-950 text-white border-zinc-800 p-0 overflow-hidden">
-        <div className="flex flex-col md:flex-row h-full max-h-[85vh]">
+        <div className="flex flex-col md:flex-row h-full max-h-[80vh]">
           {/* Left Side - Poster */}
           <div className="hidden md:block w-1/3 bg-zinc-900 relative">
             <img

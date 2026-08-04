@@ -117,9 +117,9 @@ function AnimeDetailsPage() {
 
           {/* Metadata Row */}
           <div className="flex flex-wrap items-center gap-4 text-sm font-semibold text-muted-foreground mb-6">
-            <span>{anime.first_air_date ? anime.first_air_date.substring(0, 4) : "2024"}</span>
-            <span>{anime.number_of_seasons} Seasons</span>
-            {anime.genres?.slice(0, 3).map((genre: any) => (
+            <span>{anime.first_air_date ? anime.first_air_date.substring(0, 4) : "não disponível"}</span>
+            <span>{anime.number_of_seasons} Temporadas</span>
+            {anime.genres?.slice(0,3).map((genre: any) => (
               <span key={genre.id} className="px-2 py-0.5 rounded-full border border-border bg-white/5">{genre.name}</span>
             ))}
             <span className="flex items-center gap-1 text-yellow-500">
