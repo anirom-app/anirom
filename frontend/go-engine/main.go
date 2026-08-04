@@ -9,28 +9,44 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"sync"
 
 	"github.com/anacrolix/torrent"
 )
 
 var client *torrent.Client
 
-func main() {
-	var err error
+var clientMutex sync.Mutex
 
-	// Create a custom config that downloads to %TEMP%
+func getClient() *torrent.Client {
+	clientMutex.Lock()
+	defer clientMutex.Unlock()
+	return client
+}
+
+func initClient() {
 	cfg := torrent.NewDefaultClientConfig()
 	cfg.DataDir = filepath.Join(os.TempDir(), "anirom_torrents")
-	cfg.NoDefaultPortForwarding = true // Disable UPnP to avoid router 500 errors
-	// Tuned connections to prevent router crashes and memory leaks
+	cfg.NoDefaultPortForwarding = true
 	cfg.EstablishedConnsPerTorrent = 50
 	cfg.HalfOpenConnsPerTorrent = 15
 
+	var err error
 	client, err = torrent.NewClient(cfg)
 	if err != nil {
 		log.Fatalf("error creating torrent client: %v", err)
 	}
-	defer client.Close()
+}
+
+func main() {
+	initClient()
+	defer func() {
+		clientMutex.Lock()
+		if client != nil {
+			client.Close()
+		}
+		clientMutex.Unlock()
+	}()
 
 	http.HandleFunc("/api/stream", streamHandler)
 	http.HandleFunc("/api/stop", stopHandler)
@@ -43,10 +59,20 @@ func main() {
 
 func stopHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
-	for _, t := range client.Torrents() {
-		t.Drop()
+	
+	clientMutex.Lock()
+	if client != nil {
+		client.Close()
+		client = nil
 	}
-	fmt.Println("[Go-Engine] Todos os torrents foram parados e descartados")
+	
+	dataDir := filepath.Join(os.TempDir(), "anirom_torrents")
+	os.RemoveAll(dataDir)
+	fmt.Println("[Go-Engine] Todos os torrents foram parados e cache deletado")
+	
+	clientMutex.Unlock()
+	initClient()
+	
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -60,7 +86,13 @@ func streamHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	t, err := client.AddMagnet(magnet)
+	c := getClient()
+	if c == nil {
+		http.Error(w, "client not ready", http.StatusInternalServerError)
+		return
+	}
+
+	t, err := c.AddMagnet(magnet)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

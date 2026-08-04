@@ -57,9 +57,9 @@ module.exports = {
         sm: "calc(var(--radius) - 4px)",
       },
       fontFamily: {
-        heading: ["var(--font-heading)"],
-        sans: ["var(--font-sans)"],
-        pirata: ["var(--font-pirata)"],
+        heading: ["'Plus Jakarta Sans'", "sans-serif"],
+        sans: ["'Manrope'", "sans-serif"],
+        pirata: ["'Pirata One'", "cursive"],
       },
       keyframes: {
         "accordion-down": {
