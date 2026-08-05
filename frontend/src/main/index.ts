@@ -84,7 +84,7 @@ function clearTorrentCacheSync() {
   try {
     if (fs.existsSync(dataDir)) {
       console.log("[Electron] Limpando cache de torrents em:", dataDir);
-      fs.rmSync(dataDir, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
+      fs.rmSync(dataDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
     }
   } catch (err: any) {
     console.warn(`[Electron] Aviso ao limpar cache de torrents (Inofensivo): ${err.message}`);
@@ -192,9 +192,26 @@ ipcMain.handle('play-video', async (_event, payload) => {
     ? '\\\\.\\pipe\\anirom-mpv-ipc-' + Date.now()
     : join(os.tmpdir(), 'anirom-mpv-ipc-' + Date.now() + '.sock');
 
+  let targetUrl = url;
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    // If it's not a localhost torrent stream, pass through proxy
+    if (!url.includes('localhost:8080')) {
+      targetUrl = `http://localhost:8080/api/http-proxy?url=${encodeURIComponent(url)}`;
+    }
+  }
+
+  const cacheDir = join(os.tmpdir(), 'anirom_torrents');
+  try {
+    if (!require('fs').existsSync(cacheDir)) {
+      require('fs').mkdirSync(cacheDir, { recursive: true });
+    }
+  } catch (e) {
+    console.warn("Could not create cache directory", e);
+  }
+
   try {
     const mpvArgs = [
-      url,
+      targetUrl,
       `--input-ipc-server=${ipcSocketPath}`,
       `--force-media-title=${title}`,
       '--alang=por,pt,pt-BR,pt-br,en,eng,jpn,ja',
@@ -208,16 +225,25 @@ ipcMain.handle('play-video', async (_event, payload) => {
       '--network-timeout=300',
       '--stream-lavf-o=reconnect=1,reconnect_delay_max=30',
       '--cache=yes',
-      '--cache-pause=yes',
-      '--cache-secs=15',
-      '--demuxer-max-bytes=128M',
-      '--demuxer-readahead-secs=15'
+      '--cache-on-disk=yes',
+      `--demuxer-cache-dir=${cacheDir}`,
+      '--demuxer-max-bytes=1500M',
+      '--demuxer-readahead-secs=3600',
+      `--log-file=${join(os.tmpdir(), 'mpv-crash.log')}`
     ];
     
     const mpvProcess = spawn(mpvPath, mpvArgs);
 
     mpvProcess.on('error', (err) => {
       console.error("Falha ao iniciar MPV:", err);
+    });
+    
+    mpvProcess.stdout?.on('data', (data) => {
+      console.log(`[MPV stdout]: ${data.toString()}`);
+    });
+
+    mpvProcess.stderr?.on('data', (data) => {
+      console.error(`[MPV stderr]: ${data.toString()}`);
     });
     
     mpvProcess.on('close', (code) => {

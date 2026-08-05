@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -30,6 +31,7 @@ func initClient() {
 	cfg.NoDefaultPortForwarding = true
 	cfg.EstablishedConnsPerTorrent = 50
 	cfg.HalfOpenConnsPerTorrent = 15
+	cfg.ListenPort = 0 // Picks a random available port to avoid bind errors on restart
 
 	var err error
 	client, err = torrent.NewClient(cfg)
@@ -50,6 +52,7 @@ func main() {
 
 	http.HandleFunc("/api/stream", streamHandler)
 	http.HandleFunc("/api/stop", stopHandler)
+	http.HandleFunc("/api/http-proxy", httpProxyHandler)
 
 	fmt.Println("[Go-Engine] Servidor P2P nativo rodando na porta 8080")
 	if err := http.ListenAndServe(":8080", nil); err != nil {
@@ -153,6 +156,55 @@ func streamHandler(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Printf("[Go-Engine] Streaming file: %s (Size: %d bytes)\n", selectedFile.DisplayPath(), selectedFile.Length())
 
-	// http.ServeContent handles Range requests automatically
 	http.ServeContent(w, r, selectedFile.DisplayPath(), time.Time{}, reader)
+}
+
+func httpProxyHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
+	targetUrl := r.URL.Query().Get("url")
+	if targetUrl == "" {
+		http.Error(w, "url is required", http.StatusBadRequest)
+		return
+	}
+
+	req, err := http.NewRequest("GET", targetUrl, nil)
+	if err != nil {
+		http.Error(w, "Error creating request", http.StatusInternalServerError)
+		return
+	}
+
+	// Forward Range header for seeking
+	if rangeHeader := r.Header.Get("Range"); rangeHeader != "" {
+		req.Header.Set("Range", rangeHeader)
+	}
+
+	client := &http.Client{
+		Timeout: 30 * time.Second,
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		http.Error(w, "Error forwarding request", http.StatusBadGateway)
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusForbidden {
+		// Placeholder for token renewal logic as requested by user
+		// In a complete implementation, this would fetch a new URL and retry
+		fmt.Println("[Go-Engine] Warning: Received 403 Forbidden. Token might be expired.")
+	}
+
+	// Forward important headers
+	for k, v := range resp.Header {
+		if k == "Content-Length" || k == "Content-Type" || k == "Content-Range" || k == "Accept-Ranges" {
+			w.Header().Set(k, v[0])
+		}
+	}
+
+	w.WriteHeader(resp.StatusCode)
+	
+	// Stream the body efficiently without loading into RAM
+	io.Copy(w, resp.Body)
 }
