@@ -4,6 +4,7 @@ import { useAuthStore, isTokenExpired } from "@/hooks/useAuthStore";
 import { trpc } from "@/main";
 import { Navbar } from "@/components/Navbar";
 import { AnimeCarousel } from "@/components/AnimeCarousel";
+import { ContinueWatchingRow } from "@/components/ContinueWatchingRow";
 import { Button } from "@/components/ui/button";
 import { Bookmark, Loader2, Check } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
@@ -271,6 +272,7 @@ function Home() {
         <div className="w-full space-y-12 pt-2 relative z-20 pb-20">
           <AnimeCarousel title="Para Você" animes={forYou} />
           <AnimeCarousel title="Ação" animes={actionAnimes} />
+          <ContinueWatchingRow />
           <AnimeCarousel title="Mistério" animes={horror} />
           <AnimeCarousel title="Fantasia" animes={fantasy} />
           <AnimeCarousel title="Em Alta" animes={trending} />

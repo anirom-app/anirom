@@ -103,7 +103,6 @@ export function AnimeDetailsModal({ isOpen, onOpenChange, anime }: AnimeDetailsM
 
   if (!anime) return null;
 
-  // TMDB aggregate_credits returns 'cast'. We want to map it to show the actor and the character.
   const cast = anime.aggregate_credits?.cast || [];
   const creator = anime.created_by && anime.created_by.length > 0 ? anime.created_by[0] : null;
 

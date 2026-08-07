@@ -10,6 +10,10 @@ import type { AppRouter } from '../../main/routers/_app'
 import { routeTree } from './routeTree.gen'
 import './globals.css'
 
+import { historySyncService } from './services/HistorySyncService'
+
+historySyncService.init()
+
 // Create a new router instance
 const router = createRouter({ routeTree })
 

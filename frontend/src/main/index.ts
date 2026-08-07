@@ -159,7 +159,7 @@ function createWindow(): void {
 
 // IPC handler for play-video (from original code)
 ipcMain.handle('play-video', async (_event, payload) => {
-  let rawUrl, title, tmdbId, animeTitle, episodeNumber;
+  let rawUrl, title, tmdbId, animeTitle, episodeNumber, resumeTime;
   if (typeof payload === 'string') {
     rawUrl = payload;
     title = 'Anirom Video';
@@ -169,6 +169,7 @@ ipcMain.handle('play-video', async (_event, payload) => {
     tmdbId = payload.tmdbId;
     animeTitle = payload.animeTitle;
     episodeNumber = payload.episodeNumber;
+    resumeTime = payload.resumeTime;
   }
   const url = typeof rawUrl === 'string' ? rawUrl : (rawUrl?.url || JSON.stringify(rawUrl));
   
@@ -193,7 +194,25 @@ ipcMain.handle('play-video', async (_event, payload) => {
     : join(os.tmpdir(), 'anirom-mpv-ipc-' + Date.now() + '.sock');
 
   let targetUrl = url;
-  if (url.startsWith('http://') || url.startsWith('https://')) {
+  let isLocalFile = false;
+
+  // Verificacao de retencao offline (se o video parcial ja foi salvo)
+  if (tmdbId && episodeNumber) {
+    const fs = require('fs');
+    const saveDir = join(os.tmpdir(), 'anirom_saved_progress');
+    const possibleExts = ['.mkv', '.mp4', '.webm', '.avi'];
+    for (const ext of possibleExts) {
+      const localPath = join(saveDir, `${tmdbId}_${episodeNumber}${ext}`);
+      if (fs.existsSync(localPath)) {
+        targetUrl = localPath;
+        isLocalFile = true;
+        console.log(`[MPV] Usando arquivo retido offline: ${localPath}`);
+        break;
+      }
+    }
+  }
+
+  if (!isLocalFile && (url.startsWith('http://') || url.startsWith('https://'))) {
     // If it's not a localhost torrent stream, pass through proxy
     if (!url.includes('localhost:8080')) {
       targetUrl = `http://localhost:8080/api/http-proxy?url=${encodeURIComponent(url)}`;
@@ -232,7 +251,15 @@ ipcMain.handle('play-video', async (_event, payload) => {
       `--log-file=${join(os.tmpdir(), 'mpv-crash.log')}`
     ];
     
+    if (resumeTime) {
+      mpvArgs.push(`--start=${resumeTime}`);
+    }
+    
     const mpvProcess = spawn(mpvPath, mpvArgs);
+    
+    let lastTimePos = 0;
+    let duration = 0;
+    let isCompleted = false;
 
     mpvProcess.on('error', (err) => {
       console.error("Falha ao iniciar MPV:", err);
@@ -249,7 +276,24 @@ ipcMain.handle('play-video', async (_event, payload) => {
     mpvProcess.on('close', (code) => {
       console.log(`[MPV] Fechado com código ${code}. Solicitando parada do torrent...`);
       
-      fetch("http://localhost:8080/api/stop")
+      let saveProgress = 'false';
+      if (lastTimePos > 0 && duration > 0) {
+          const pct = lastTimePos / duration;
+          isCompleted = pct >= 0.90;
+          if (!isCompleted && !isLocalFile) saveProgress = 'true';
+          
+          if (mainWindow && !mainWindow.isDestroyed()) {
+             mainWindow.webContents.send('sync-history', {
+                 animeId: tmdbId,
+                 episodeNumber: episodeNumber,
+                 timestampMillis: Math.floor(lastTimePos * 1000),
+                 durationMillis: Math.floor(duration * 1000),
+                 isCompleted
+             });
+          }
+      }
+      
+      fetch(`http://localhost:8080/api/stop?saveProgress=${saveProgress}&animeId=${tmdbId}&episode=${episodeNumber}`)
         .then(() => console.log("[Go Engine] Torrents parados com sucesso via API."))
         .catch(e => console.error("Falha ao parar torrent via API:", e));
 
@@ -263,6 +307,32 @@ ipcMain.handle('play-video', async (_event, payload) => {
       console.log(`[Main] Calling AniSkip with title=${animeTitle} episode=${episodeNumber}`);
       fetchAniSkip(animeTitle, episodeNumber, ipcSocketPath);
     }
+    
+    // IPC Polling properties for History tracking
+    setTimeout(() => {
+        const client = netNode.connect(ipcSocketPath, () => {
+             // Observe time-pos
+             client.write(JSON.stringify({ "command": ["observe_property", 1, "time-pos"] }) + "\n");
+             // Observe duration
+             client.write(JSON.stringify({ "command": ["observe_property", 2, "duration"] }) + "\n");
+        });
+        
+        client.on('data', (data) => {
+             const lines = data.toString().split('\n');
+             lines.forEach(line => {
+                 if (!line.trim()) return;
+                 try {
+                     const msg = JSON.parse(line);
+                     if (msg.event === "property-change") {
+                         if (msg.name === "time-pos" && msg.data) lastTimePos = msg.data;
+                         if (msg.name === "duration" && msg.data) duration = msg.data;
+                     }
+                 } catch (e) {}
+             });
+        });
+        
+        client.on('error', () => { /* ignore */ });
+    }, 2000); // delay to let MPV init the IPC server
     
     return true;
   } catch (e) {

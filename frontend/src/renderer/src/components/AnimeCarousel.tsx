@@ -1,6 +1,6 @@
 
 
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
 
 import { ChevronLeft, ChevronRight, Star, ThumbsUp, ThumbsDown } from "lucide-react";
 import { AnimeCard } from "./AnimeCard";
@@ -12,6 +12,22 @@ interface AnimeCarouselProps {
 
 export function AnimeCarousel({ title, animes }: AnimeCarouselProps) {
   const rowRef = useRef<HTMLDivElement>(null);
+  const [showLeft, setShowLeft] = useState(false);
+  const [showRight, setShowRight] = useState(false);
+
+  const checkScroll = () => {
+    if (rowRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = rowRef.current;
+      setShowLeft(scrollLeft > 0);
+      setShowRight(Math.ceil(scrollLeft + clientWidth) < scrollWidth);
+    }
+  };
+
+  useEffect(() => {
+    checkScroll();
+    window.addEventListener('resize', checkScroll);
+    return () => window.removeEventListener('resize', checkScroll);
+  }, [animes]);
 
   const scroll = (direction: 'left' | 'right') => {
     if (rowRef.current) {
@@ -24,19 +40,22 @@ export function AnimeCarousel({ title, animes }: AnimeCarouselProps) {
   if (!animes || animes.length === 0) return null;
 
   return (
-    <div className="w-full space-y-4 relative">
+    <div className="w-full space-y-4 relative group/carousel">
       <h2 className="text-2xl font-bold font-heading px-4 md:px-8">{title}</h2>
       
       <div className="relative">
-        <button 
-          onClick={() => scroll('left')}
-          className="absolute left-4 top-1/2 -translate-y-1/2 z-20 bg-white/80 hover:bg-white text-black p-3 rounded-full shadow-xl transition-all flex items-center justify-center backdrop-blur-sm"
-        >
-          <ChevronLeft className="w-5 h-5" />
-        </button>
+        {showLeft && (
+          <button 
+            onClick={() => scroll('left')}
+            className="absolute left-4 top-1/2 -translate-y-1/2 z-20 bg-white/80 hover:bg-white text-black p-3 rounded-full shadow-xl transition-all flex items-center justify-center backdrop-blur-sm opacity-0 group-hover/carousel:opacity-100"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+        )}
 
         <div 
           ref={rowRef}
+          onScroll={checkScroll}
           className="flex gap-4 overflow-x-auto px-4 md:px-8 pb-4 hide-scrollbar scroll-smooth"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
@@ -52,12 +71,14 @@ export function AnimeCarousel({ title, animes }: AnimeCarouselProps) {
           </div>
         </div>
 
-        <button 
-          onClick={() => scroll('right')}
-          className="absolute right-4 top-1/2 -translate-y-1/2 z-20 bg-white/80 hover:bg-white text-black p-3 rounded-full shadow-xl transition-all flex items-center justify-center backdrop-blur-sm"
-        >
-          <ChevronRight className="w-5 h-5" />
-        </button>
+        {showRight && (
+          <button 
+            onClick={() => scroll('right')}
+            className="absolute right-4 top-1/2 -translate-y-1/2 z-20 bg-white/80 hover:bg-white text-black p-3 rounded-full shadow-xl transition-all flex items-center justify-center backdrop-blur-sm opacity-0 group-hover/carousel:opacity-100"
+          >
+            <ChevronRight className="w-5 h-5" />
+          </button>
+        )}
       </div>
     </div>
   );

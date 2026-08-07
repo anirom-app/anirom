@@ -1,16 +1,19 @@
 package main
 
 import (
+	"bufio"
+	"bytes"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
-	"time"
 	"sync"
+	"time"
 
 	"github.com/anacrolix/torrent"
 )
@@ -63,6 +66,10 @@ func main() {
 func stopHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	
+	saveProgress := r.URL.Query().Get("saveProgress")
+	animeId := r.URL.Query().Get("animeId")
+	episode := r.URL.Query().Get("episode")
+
 	clientMutex.Lock()
 	if client != nil {
 		client.Close()
@@ -70,6 +77,34 @@ func stopHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	
 	dataDir := filepath.Join(os.TempDir(), "anirom_torrents")
+
+	if saveProgress == "true" && animeId != "" && episode != "" {
+		saveDir := filepath.Join(os.TempDir(), "anirom_saved_progress")
+		os.MkdirAll(saveDir, os.ModePerm)
+		
+		var largestFile string
+		var largestSize int64
+		filepath.Walk(dataDir, func(path string, info os.FileInfo, err error) error {
+			if err == nil && !info.IsDir() {
+				ext := strings.ToLower(filepath.Ext(path))
+				if ext == ".mp4" || ext == ".mkv" || ext == ".webm" || ext == ".avi" {
+					if info.Size() > largestSize {
+						largestSize = info.Size()
+						largestFile = path
+					}
+				}
+			}
+			return nil
+		})
+		
+		if largestFile != "" {
+			ext := filepath.Ext(largestFile)
+			dest := filepath.Join(saveDir, fmt.Sprintf("%s_%s%s", animeId, episode, ext))
+			os.Rename(largestFile, dest)
+			fmt.Printf("[Go-Engine] Retive o video parcialmente assistido em: %s\n", dest)
+		}
+	}
+
 	os.RemoveAll(dataDir)
 	fmt.Println("[Go-Engine] Todos os torrents foram parados e cache deletado")
 	
@@ -174,7 +209,6 @@ func httpProxyHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Forward Range header for seeking
 	if rangeHeader := r.Header.Get("Range"); rangeHeader != "" {
 		req.Header.Set("Range", rangeHeader)
 	}
@@ -191,12 +225,60 @@ func httpProxyHandler(w http.ResponseWriter, r *http.Request) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusForbidden {
-		// Placeholder for token renewal logic as requested by user
-		// In a complete implementation, this would fetch a new URL and retry
 		fmt.Println("[Go-Engine] Warning: Received 403 Forbidden. Token might be expired.")
 	}
 
-	// Forward important headers
+	isM3U8 := strings.Contains(targetUrl, ".m3u8") || strings.Contains(resp.Header.Get("Content-Type"), "mpegurl")
+
+	if isM3U8 && resp.StatusCode == http.StatusOK {
+		bodyBytes, err := io.ReadAll(resp.Body)
+		if err != nil {
+			http.Error(w, "Error reading m3u8", http.StatusInternalServerError)
+			return
+		}
+
+		targetURLObj, _ := url.Parse(targetUrl)
+		
+		scanner := bufio.NewScanner(bytes.NewReader(bodyBytes))
+		var rewritten bytes.Buffer
+		
+		for scanner.Scan() {
+			line := scanner.Text()
+			trimmed := strings.TrimSpace(line)
+			if trimmed == "" {
+				continue
+			}
+			if strings.HasPrefix(trimmed, "#") {
+				// M3U8 tag, output as is
+				rewritten.WriteString(line + "\n")
+			} else {
+				// It's a URL
+				chunkUrl := trimmed
+				if !strings.HasPrefix(trimmed, "http://") && !strings.HasPrefix(trimmed, "https://") {
+					// Relative URL
+					ref, err := url.Parse(trimmed)
+					if err == nil {
+						chunkUrl = targetURLObj.ResolveReference(ref).String()
+					}
+				}
+				// Wrap with proxy
+				proxiedUrl := "http://localhost:8080/api/http-proxy?url=" + url.QueryEscape(chunkUrl)
+				rewritten.WriteString(proxiedUrl + "\n")
+			}
+		}
+
+		for k, v := range resp.Header {
+			if k == "Content-Type" || k == "Access-Control-Allow-Origin" {
+				w.Header().Set(k, v[0])
+			}
+		}
+		
+		w.Header().Set("Content-Length", strconv.Itoa(rewritten.Len()))
+		w.WriteHeader(resp.StatusCode)
+		w.Write(rewritten.Bytes())
+		return
+	}
+
 	for k, v := range resp.Header {
 		if k == "Content-Length" || k == "Content-Type" || k == "Content-Range" || k == "Accept-Ranges" {
 			w.Header().Set(k, v[0])
@@ -204,7 +286,5 @@ func httpProxyHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(resp.StatusCode)
-	
-	// Stream the body efficiently without loading into RAM
 	io.Copy(w, resp.Body)
 }

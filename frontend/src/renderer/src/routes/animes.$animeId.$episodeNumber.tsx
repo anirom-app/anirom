@@ -25,6 +25,7 @@ export const Route = createFileRoute('/animes/$animeId/$episodeNumber')({
 
 function EpisodePlayer() {
   const { animeId, episodeNumber } = Route.useParams();
+  const search = Route.useSearch();
   const navigate = useNavigate();
   const epNum = parseInt(episodeNumber as string, 10);
 
@@ -155,10 +156,11 @@ function EpisodePlayer() {
         if (window.api) {
           setIsPlaying(true);
           const fullTitle = `${animeTitle || "Anime"} - Episódio ${epNum}`;
+          const resumeTime = (search as any)?.resume;
           
-          console.log("Chamando MPV com animeTitle:", animeTitle, "epNum:", epNum);
+          console.log("Chamando MPV com animeTitle:", animeTitle, "epNum:", epNum, "resume:", resumeTime);
           
-          window.api.playVideo({ url: streamUrl, title: fullTitle, tmdbId: animeId, animeTitle, episodeNumber: epNum }).then((result: any) => {
+          window.api.playVideo({ url: streamUrl, title: fullTitle, tmdbId: animeId, animeTitle, episodeNumber: epNum, resumeTime }).then((result: any) => {
             console.log("Resultado do IPC:", result);
           }).catch((err: any) => {
             console.error("Erro no IPC:", err);

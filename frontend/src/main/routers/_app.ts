@@ -145,6 +145,21 @@ export const appRouter = router({
       }
     }),
 
+  getContinueWatching: publicProcedure
+    .input(z.object({ token: z.string() }))
+    .query(async ({ input }) => {
+      try {
+        const res = await apiClient.get('/api/v1/history/continue', {
+          headers: { Authorization: `Bearer ${input.token}` }
+        });
+        console.log("[TRPC] getContinueWatching data:", res.data);
+        return res.data || [];
+      } catch (error) {
+        console.error("Erro ao buscar histórico:", (error as any).response?.data || (error as any).message);
+        return [];
+      }
+    }),
+
   getAnimeEpisodes: publicProcedure
     .input(z.object({ animeId: z.string(), seasonNumber: z.number() }))
     .query(async ({ input }) => {
