@@ -15,7 +15,7 @@
 [![license](https://img.shields.io/github/license/SeuUsuario/anirom)](https://github.com/SeuUsuario/anirom/blob/main/LICENSE)
 
 <!-- Substitua pelo link de um print real do app depois -->
-![Anirom Home Page](./public/images/anirom-interface.png)
+<img src="./frontend/public/images/anirom-interface.png" width="1200" alt="Anirom interface" />
 
 </div>
 
