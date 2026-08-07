@@ -6,7 +6,7 @@
 <h1 align="center">Anirom</h1>
 
 <p align="center">
-  <strong>Anirom é um aplicativo Desktop de código aberto criado para ser a sua central definitiva de catálogo e streaming de animes. O Anirom é escrito em Typescript Electron, Go e Java.</strong>
+  <strong>Anirom é um aplicativo Desktop de código aberto criado para ser a sua central definitiva de catálogo e streaming de animes. O Anirom é escrito em Typescript,  Go e Java.</strong>
 </p>
 
 <!-- Você pode configurar essas badges depois que criar seu repositório no Github e adicionar actions/releases -->
@@ -14,7 +14,7 @@
 [![release](https://img.shields.io/github/v/release/SeuUsuario/anirom)](https://github.com/SeuUsuario/anirom/releases)
 [![license](https://img.shields.io/github/license/SeuUsuario/anirom)](https://github.com/SeuUsuario/anirom/blob/main/LICENSE)
 
-<!-- Substitua pelo link de um print real do app depois -->
+
 <img src="./frontend/public/images/anirom-interface.png" width="1200" alt="Anirom interface" />
 
 </div>
@@ -24,13 +24,15 @@
 - **Catálogo Completo:** Navegue, busque e descubra seus animes favoritos com metadados detalhados.
 - **Motor Integrado:** Assista diretamente no app usando o motor de streaming nativo ultra rápido escrito em Go.
 - **Ecossistema Fechado:** Conectado à nossa infraestrutura otimizada para a melhor velocidade e segurança.
-- **Design Moderno:** Interface de usuário clean e imersiva construída com TailwindCSS.
+- **Design Moderno:** Interface de usuário clean e imersiva construída com TailwindCSS e shadcn/ui.
 
 ## 🛠️ Tecnologias
 
-- **Interface:** [Next.js](https://nextjs.org/), [React](https://reactjs.org/), [Tailwind CSS](https://tailwindcss.com/)
-- **Desktop:** [Electron](https://www.electronjs.org/)
-- **Linguagens:** [TypeScript](https://www.typescriptlang.org/), [Go](https://go.dev/)
+- **Desktop (BFF):** [Electron](https://www.electronjs.org/), [Node.js](https://nodejs.org/), [tRPC](https://trpc.io/), [TypeScript](https://www.typescriptlang.org/)
+- **Interface:** [React](https://reactjs.org/), [Tailwind CSS](https://tailwindcss.com/), [shadcn/ui](https://ui.shadcn.com/)
+- **Motor:** [Go](https://go.dev/)
+- **Player:** [MPV](https://mpv.io/)
+- **Backend (Nuvem):** [Spring Boot](https://spring.io/), [Java](https://www.java.com/), [PostgreSQL](https://www.postgresql.org/)
 
 ## ⚙️ Como executar localmente
 
@@ -38,7 +40,7 @@ Siga os passos abaixo para instalar as dependências e rodar o aplicativo na sua
 
 ```bash
 # 1. Clone o repositório
-git clone https://github.com/SeuUsuario/anirom-app.git
+git clone https://github.com/SeuUsuario/anirom-app/anirom.git
 cd anirom
 
 # 2. Configure as variáveis de ambiente
