@@ -51,7 +51,7 @@ cp .env.example .env.local
 npm install
 
 # 4. Rode a versão Desktop (Electron)
-npm run dev:electron
+npm run dev
 ```
 
 ## 🤝 Como Contribuir
