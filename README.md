@@ -6,7 +6,7 @@
 <h1 align="center">Anirom</h1>
 
 <p align="center">
-  <strong>Anirom é um aplicativo Desktop de código aberto criado para ser a sua central definitiva de catálogo e streaming de animes. O Anirom é escrito em Node.js (Electron, Next.js, TypeScript) e Go.</strong>
+  <strong>Anirom é um aplicativo Desktop de código aberto criado para ser a sua central definitiva de catálogo e streaming de animes. O Anirom é escrito em Typescript Electron, Go e Java.</strong>
 </p>
 
 <!-- Você pode configurar essas badges depois que criar seu repositório no Github e adicionar actions/releases -->
@@ -15,7 +15,7 @@
 [![license](https://img.shields.io/github/license/SeuUsuario/anirom)](https://github.com/SeuUsuario/anirom/blob/main/LICENSE)
 
 <!-- Substitua pelo link de um print real do app depois -->
-![Anirom Home Page](./docs/screenshot.png)
+![Anirom Home Page](./public/images/anirom-interface.png)
 
 </div>
 
