@@ -8,9 +8,10 @@ import { AnimeCard } from "./AnimeCard";
 interface AnimeCarouselProps {
   title: string;
   animes: any[];
+  onViewMore?: () => void;
 }
 
-export function AnimeCarousel({ title, animes }: AnimeCarouselProps) {
+export function AnimeCarousel({ title, animes, onViewMore }: AnimeCarouselProps) {
   const rowRef = useRef<HTMLDivElement>(null);
   const [showLeft, setShowLeft] = useState(false);
   const [showRight, setShowRight] = useState(false);
@@ -66,7 +67,10 @@ export function AnimeCarousel({ title, animes }: AnimeCarouselProps) {
           ))}
           
           {/* Card Ver Mais (Visual) */}
-          <div className="flex-none w-[160px] md:w-[220px] aspect-[2/3] rounded-xl overflow-hidden border border-white/5 bg-white/5 flex items-center justify-center cursor-default group hover:bg-white/10 transition-colors shadow-xl">
+          <div 
+            onClick={onViewMore}
+            className={`flex-none w-[160px] md:w-[220px] aspect-[2/3] rounded-xl overflow-hidden border border-white/5 bg-white/5 flex items-center justify-center group hover:bg-white/10 transition-colors shadow-xl ${onViewMore ? 'cursor-pointer' : 'cursor-default'}`}
+          >
             <span className="text-white/60 font-semibold group-hover:text-white transition-colors">Ver Mais</span>
           </div>
         </div>

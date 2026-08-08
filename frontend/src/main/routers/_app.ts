@@ -69,6 +69,44 @@ export const appRouter = router({
     }
     return data.results;
   }),
+  getExploreAnimes: publicProcedure
+    .input(z.object({ 
+      page: z.number().default(1), 
+      sortBy: z.string().default('popularity.desc'),
+      genres: z.array(z.string()).optional(),
+      keywords: z.array(z.string()).optional()
+    }))
+    .query(async ({ input }) => {
+      const genresStr = input.genres && input.genres.length > 0 
+        ? `,${input.genres.join(',')}` 
+        : '';
+        
+      const keywordsStr = input.keywords && input.keywords.length > 0
+        ? input.keywords.join(',') // comma means AND in TMDB for keywords
+        : undefined;
+        
+      const cacheKey = `tmdb_explore_v2_${input.sortBy}_${input.page}_${genresStr}_${keywordsStr || 'none'}`;
+      let data = getCachedData(cacheKey);
+      if (!data) {
+        const res = await tmdbClient.get('/discover/tv', { 
+          params: { 
+            with_original_language: 'ja', 
+            with_genres: `16${genresStr}`, 
+            with_keywords: keywordsStr,
+            sort_by: input.sortBy,
+            page: input.page,
+            ...(input.sortBy === 'vote_average.desc' && { 'vote_count.gte': 300 })
+          } 
+        });
+        data = res.data;
+        setCachedData(cacheKey, data);
+      }
+      return {
+        results: data.results,
+        page: data.page,
+        total_pages: Math.min(data.total_pages, 500) // TMDB limit is 500 pages
+      };
+    }),
   getForYouAnimes: publicProcedure.query(async () => {
     const cacheKey = 'tmdb_for_you_v2';
     let data = getCachedData(cacheKey);

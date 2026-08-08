@@ -27,8 +27,8 @@ export function Navbar() {
 
   const navItems = [
     { icon: Home, label: "Início", to: "/" },
-    { icon:Bookmark, label: "Salvos", to: "/salvos" },
-    { icon: ListSortDescending, label: "Categorias", to: "/schedule" },
+    { icon: Bookmark, label: "Salvos", to: "/salvos" },
+    { icon: ListSortDescending, label: "Categorias", to: "/explore" },
     { icon: Zap, label: "Trending", to: "/trending" },
     { icon: Bell, label: "Notifications", to: "/notifications" },
   ];
