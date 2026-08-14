@@ -7,7 +7,8 @@ export function ContinueWatchingCard({ item }: { item: any }) {
   const { data: animeDetails } = trpc.getAnimeDetails.useQuery({ animeId: item.animeId })
   
   
-  const { data: episodes } = trpc.getAnimeEpisodes.useQuery({ animeId: item.animeId, seasonNumber: 1 })
+  const currentSeasonNumber = item.seasonNumber || 1
+  const { data: episodes } = trpc.getAnimeEpisodes.useQuery({ animeId: item.animeId, seasonNumber: currentSeasonNumber })
   
   const animeName = animeDetails?.name || 'Carregando...'
   const episodeData = episodes?.find((ep: any) => String(ep.episode_number) === item.episodeNumber)
@@ -15,6 +16,9 @@ export function ContinueWatchingCard({ item }: { item: any }) {
   const stillPath = episodeData?.still_path 
     ? `https://image.tmdb.org/t/p/w500${episodeData.still_path}`
     : (animeDetails?.backdrop_path ? `https://image.tmdb.org/t/p/w500${animeDetails.backdrop_path}` : 'https://via.placeholder.com/500x281?text=Sem+Imagem')
+
+  const seasonObj = animeDetails?.seasons?.find((season: any) => season.season_number === currentSeasonNumber)
+  const seasonName = seasonObj?.name || `Temporada ${currentSeasonNumber}`
 
   const progress = item.durationMillis > 0 ? (item.timestampMillis / item.durationMillis) * 100 : 0
 
@@ -37,6 +41,7 @@ export function ContinueWatchingCard({ item }: { item: any }) {
 
       <div className="absolute bottom-0 left-0 right-0 p-3 pointer-events-none">
         <h3 className="text-white font-semibold text-sm line-clamp-1">{animeName}</h3>
+        <span className="text-zinc-300 text-xs line-clamp-1">{seasonName}</span>
         <p className="text-zinc-300 text-xs line-clamp-1">
           Episódio {item.episodeNumber}{episodeData?.name ? ` • ${episodeData.name}` : ''}
         </p>
