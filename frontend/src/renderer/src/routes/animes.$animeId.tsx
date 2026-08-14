@@ -78,7 +78,7 @@ function AnimeDetailsPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex">
-      <Navbar />
+      
       
       <main className="flex-1 md:ml-20 relative min-h-screen overflow-x-hidden">
         

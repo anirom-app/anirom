@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Navbar } from "./Navbar";
 
 
 
@@ -93,12 +94,16 @@ const P2PNetworkAnimation = ({ color }: { color: string }) => {
 export function AnimeLoadingScreen({ statusPhrase }: AnimeLoadingScreenProps) {
 
   return (
+   <>
+   
     <motion.div 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="flex min-h-screen items-center justify-center bg-black flex-col gap-6 relative overflow-hidden fixed inset-0 z-50"
     >
+        <Navbar/>
+      
       {/* Subtle cinematic grain/vignette overlay */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_transparent_0%,_rgba(0,0,0,0.8)_100%)] pointer-events-none z-10" />
       <div className="absolute inset-0 opacity-20 pointer-events-none z-10" style={{ backgroundImage: "url('https://grainy-gradients.vercel.app/noise.svg')", backgroundRepeat: 'repeat' }} />
@@ -125,5 +130,6 @@ export function AnimeLoadingScreen({ statusPhrase }: AnimeLoadingScreenProps) {
         </AnimatePresence>
       </div>  
     </motion.div>
+    </>
   );
 }

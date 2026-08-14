@@ -9,6 +9,7 @@ import { fetchTorrentioStreams } from "@/services/torrentio";
 import { api } from "@/services/api";
 import { useAddonStore } from "@/hooks/useAddonStore";
 import { AnimeLoadingScreen } from "@/components/AnimeLoadingScreen";
+import { Navbar } from '@/components/Navbar';
 
 declare global {
   interface Window {
@@ -189,6 +190,7 @@ function EpisodePlayer() {
 
   const renderStreamSelection = () => (
     <div className="min-h-screen bg-background text-foreground flex flex-col items-center py-12 px-4">
+     
       <div className="max-w-3xl w-full">
         <Button variant="ghost" className="mb-6 -ml-4 hover:bg-secondary/20" onClick={() => navigate({ to: `/animes/${animeId}` })}>
           <ArrowLeft className="h-5 w-5 mr-2" />

@@ -24,7 +24,7 @@ const GENRES = [
   { id: '10749', name: 'Romance' },
   { id: '80', name: 'Crime / Suspense' },
   { id: '10768', name: 'Guerra & Política' },
-  { id: '37', name: 'Faroeste' },
+  { id: '6075', name: 'Esportes' },
   { id: '10751', name: 'Família' },
   { id: '10762', name: 'Infantil / Kids' },
   { id: '10766', name: 'Novela / Drama Longo' }
@@ -87,19 +87,20 @@ function ExplorePage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground pb-20 flex overflow-x-hidden">
-      <Navbar />
+      
       <main className="flex-1 min-w-0 overflow-x-hidden md:ml-20 px-6 md:px-16 pt-24 pb-12">
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
           <div>
-            <h1 className="text-3xl md:text-5xl font-bold font-heading mb-2">
+            <h1 className="text-3xl font-heading font-bold text-white">
               {selectedGenres.length === 0 ? "Descobrir Categorias" : "Animes Filtrados"}
             </h1>
-            <p className="text-muted-foreground text-lg">
+            <p className="text-muted-foreground">
               {selectedGenres.length === 0 
                 ? "Navegue por diversos gêneros" 
                 : `${selectedGenres.length} gênero(s) selecionado(s)`}
             </p>
           </div>
+          
           
           <div className="flex items-center gap-4">
             <Select value={sortBy} onValueChange={(val) => { setSortBy(val); setPage(1); }}>

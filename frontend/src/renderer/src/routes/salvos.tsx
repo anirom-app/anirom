@@ -28,11 +28,6 @@ function SalvosPage() {
   const [isLoadingDetails, setIsLoadingDetails] = useState(true);
 
   useEffect(() => {
-    if (!token) {
-      navigate({ to: "/login" });
-      return;
-    }
-
     const loadDetails = async () => {
       if (isLoadingSaved) return;
       if (savedList.length === 0) {
@@ -128,7 +123,7 @@ function SalvosPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex">
-      <Navbar />
+      
       
       <main className="flex-1 ml-0 md:ml-20 relative min-h-screen overflow-x-hidden pt-24 px-6 md:px-8 pb-20">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">

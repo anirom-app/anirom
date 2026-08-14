@@ -56,7 +56,7 @@ export function ContinueWatchingRow() {
         <div 
           ref={rowRef}
           onScroll={checkScroll}
-          className="flex gap-4 overflow-x-auto px-4 md:px-8 pb-4 hide-scrollbar scroll-smooth"
+          className="flex gap-4 overflow-x-auto px-4 md:px-8 pt-3.5 pb-4 hide-scrollbar scroll-smooth"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {history.map((item: any) => (

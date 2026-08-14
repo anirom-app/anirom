@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate, Link } from '@tanstack/react-router'
 import { useEffect, useState } from "react";
-import { useAuthStore, isTokenExpired } from "@/hooks/useAuthStore";
+import { useAuthStore } from "@/hooks/useAuthStore";
 import { trpc } from "@/main";
 import { Navbar } from "@/components/Navbar";
 import { AnimeCarousel } from "@/components/AnimeCarousel";
@@ -47,15 +47,6 @@ function Home() {
   useEffect(() => {
     setIsHydrated(true);
   }, []);
-
-  useEffect(() => {
-    if (!isHydrated) return;
-    
-    if (!token || isTokenExpired(token)) {
-      if (token) logout(); // Limpa o token expirado
-      navigate({ to: "/login" });
-    }
-  }, [token, isHydrated, navigate, logout]);
 
   useEffect(() => {
     if (!token || loadingTopRated) return;
@@ -176,7 +167,7 @@ function Home() {
 
   return (
     <div className="min-h-screen bg-background text-foreground pb-20 flex overflow-x-hidden">
-      <Navbar />
+     
       <main className="flex-1 min-w-0 overflow-x-hidden md:ml-20 pb-16 md:pb-0 relative min-h-screen">
         {heroAnimes.length > 0 && (
           <div className="relative w-full min-h-[75vh] md:min-h-[85vh] flex flex-col justify-center py-24 md:py-0 px-6 md:px-16 overflow-hidden">

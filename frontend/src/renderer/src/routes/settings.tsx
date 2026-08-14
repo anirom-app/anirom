@@ -2,12 +2,13 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useAddonStore } from "@/hooks/useAddonStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Save, Trash2, Loader2, AlertCircle } from "lucide-react";
+import { ArrowLeft, Save, Trash2, Loader2, AlertCircle, Puzzle } from "lucide-react";
 import { useState } from "react";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { useProxyStore } from "@/hooks/useProxyStore";
 import { trpc } from '@/main';
+import { Navbar } from '@/components/Navbar';
 
 export const Route = createFileRoute('/settings')({
   component: SettingsPage,
@@ -66,11 +67,15 @@ function SettingsPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col p-8 max-w-3xl mx-auto">
+     
       <header className="flex items-center gap-4 mb-8 border-b border-border/50 pb-4">
         <Button variant="ghost" size="icon" onClick={() => window.history.back()}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <h1 className="font-heading font-bold text-3xl">Configurações P2P</h1>
+        <div className="flex items-center justify-center gap-2">
+          <h1 className="font-heading font-bold text-3xl">Configurações Addons</h1>
+          <Puzzle  className="h-8 w-8 text-white" />
+        </div>
       </header>
 
       <div className="space-y-8">

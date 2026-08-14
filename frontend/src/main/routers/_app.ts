@@ -77,15 +77,16 @@ export const appRouter = router({
       keywords: z.array(z.string()).optional()
     }))
     .query(async ({ input }) => {
-      const genresStr = input.genres && input.genres.length > 0 
-        ? `,${input.genres.join(',')}` 
-        : '';
+      const isKeywordId = (id: string) => id === '6075' || id === '210024';
+      const inputGenres = input.genres || [];
+      
+      const standardGenres = inputGenres.filter(g => !isKeywordId(g));
+      const keywordIds = (input.keywords || []).concat(inputGenres.filter(g => isKeywordId(g)));
+
+      const genresStr = standardGenres.length > 0 ? `,${standardGenres.join(',')}` : '';
+      const keywordsStr = keywordIds.length > 0 ? keywordIds.join(',') : undefined;
         
-      const keywordsStr = input.keywords && input.keywords.length > 0
-        ? input.keywords.join(',') // comma means AND in TMDB for keywords
-        : undefined;
-        
-      const cacheKey = `tmdb_explore_v2_${input.sortBy}_${input.page}_${genresStr}_${keywordsStr || 'none'}`;
+      const cacheKey = `tmdb_explore_v3_${input.sortBy}_${input.page}_${genresStr}_${keywordsStr || 'none'}`;
       let data = getCachedData(cacheKey);
       if (!data) {
         const res = await tmdbClient.get('/discover/tv', { 

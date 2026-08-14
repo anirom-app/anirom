@@ -22,7 +22,7 @@ function SearchPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex">
-      <Navbar />
+      
       
       <main className="flex-1 ml-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-12 w-full">
         <div className="mb-8">
