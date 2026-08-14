@@ -6,8 +6,8 @@ export interface TorrentioStream {
   url?: string;
   infoHash?: string;
   fileIdx?: number;
-  addonName?: string; 
-  addonUrl?: string; 
+  addonName?: string;
+  addonUrl?: string;
 }
 
 const formatStreamName = (originalName: string, addonUrl: string, addonName: string) => {
@@ -43,9 +43,9 @@ const fetchWithRetry = async (url: string, retries = 1): Promise<any> => {
 
   for (let i = 0; i < retries; i++) {
     try {
-      const { data } = await axios.get(targetUrl, { 
-        timeout: isProxyEnabled ? 20000 : 10000, 
-        headers 
+      const { data } = await axios.get(targetUrl, {
+        timeout: isProxyEnabled ? 20000 : 10000,
+        headers
       });
       cache.set(url, { data, timestamp: Date.now() });
       return data;
@@ -63,13 +63,13 @@ const fetchWithRetry = async (url: string, retries = 1): Promise<any> => {
 export const fetchTorrentioStreams = async (
   addonUrl: string,
   addonName: string,
-  kitsuId: string, 
+  kitsuId: string,
   episodeNumber: number
 ): Promise<TorrentioStream[]> => {
   try {
     const baseUrl = addonUrl.replace('/manifest.json', '');
     const url = `${baseUrl}/stream/series/kitsu:${kitsuId}:${episodeNumber}.json`;
-    
+
     const data = await fetchWithRetry(url);
     if (!data || !data.streams) return [];
 
@@ -86,16 +86,16 @@ export const fetchTorrentioStreams = async (
 };
 
 export const fetchTorrentioStreamsImdb = async (
-  addonUrl: string, 
+  addonUrl: string,
   addonName: string,
-  imdbId: string, 
-  seasonNumber: number, 
+  imdbId: string,
+  seasonNumber: number,
   episodeNumber: number
 ): Promise<TorrentioStream[]> => {
   try {
     const baseUrl = addonUrl.replace('/manifest.json', '');
     const url = `${baseUrl}/stream/series/${imdbId}:${seasonNumber}:${episodeNumber}.json`;
-    
+
     const data = await fetchWithRetry(url);
     if (!data || !data.streams) return [];
 

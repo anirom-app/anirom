@@ -19,35 +19,35 @@ async function fetchAniSkip(animeTitle: string, episodeNumber: string | number, 
       query: "query ($search: String) { Media(search: $search, type: ANIME) { idMal } }",
       variables: { search: animeTitle }
     };
-    
+
     const anilistRes = await fetch("https://graphql.anilist.co", {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(anilistQuery)
     });
-    
+
     if (!anilistRes.ok) return console.log("[AniSkip] Falha ao consultar AniList");
     const anilistData = await anilistRes.json();
     const malId = anilistData?.data?.Media?.idMal;
-    
+
     if (!malId) return console.log("[AniSkip] MAL ID não encontrado para o anime");
-    
+
     console.log(`[AniSkip] MAL ID encontrado: ${malId}. Buscando tempos de skip...`);
     const aniskipRes = await fetch(`https://api.aniskip.com/v2/skip-times/${malId}/${episodeNumber}?types[]=op&types[]=ed&episodeLength=0`);
     if (!aniskipRes.ok) return console.log("[AniSkip] Falha ao consultar AniSkip API");
-    
+
     const aniskipData = await aniskipRes.json();
     if (!aniskipData.found) return console.log("[AniSkip] Nenhum skip time encontrado");
-    
+
     const op = aniskipData.results.find((r: any) => r.skipType === 'op');
     if (!op) return console.log("[AniSkip] Nenhuma abertura encontrada");
-    
+
     const startTime = op.interval.startTime;
     const endTime = op.interval.endTime;
     console.log(`[AniSkip] Abertura encontrada: ${startTime} - ${endTime}`);
-    
+
     const payload = JSON.stringify({ "command": ["script-message", "aniskip", startTime.toString(), endTime.toString()] }) + "\n";
-    
+
     function connectWithRetry(retries = 10, delay = 500) {
       const client = netNode.connect(ipcSocketPath, () => {
         client.write(payload);
@@ -63,9 +63,9 @@ async function fetchAniSkip(animeTitle: string, episodeNumber: string | number, 
         }
       });
     }
-    
+
     connectWithRetry();
-    
+
   } catch (err: any) {
     console.log("[AniSkip] Erro interno:", err.message);
   }
@@ -100,7 +100,7 @@ function startGoEngine() {
   }
 
   console.log(`[Go Engine] Iniciando a partir de: ${enginePath}`);
-  
+
   try {
     goEngineProcess = spawn(enginePath, []);
 
@@ -151,7 +151,7 @@ function createWindow(): void {
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
-  
+
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
@@ -172,11 +172,11 @@ ipcMain.handle('play-video', async (_event, payload) => {
     resumeTime = payload.resumeTime;
   }
   const url = typeof rawUrl === 'string' ? rawUrl : (rawUrl?.url || JSON.stringify(rawUrl));
-  
+
   let mpvPath;
   let scriptPath;
   let aniSkipPath;
-  
+
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     mpvPath = join(__dirname, '../../bin/mpv/mpv.exe');
     scriptPath = join(__dirname, '../../bin/mpv/scripts/anirom_osc.lua');
@@ -188,8 +188,8 @@ ipcMain.handle('play-video', async (_event, payload) => {
   }
 
   console.log(`[MPV] Inciando MPV com a URL: ${url}`);
-  
-  const ipcSocketPath = process.platform === 'win32' 
+
+  const ipcSocketPath = process.platform === 'win32'
     ? '\\\\.\\pipe\\anirom-mpv-ipc-' + Date.now()
     : join(os.tmpdir(), 'anirom-mpv-ipc-' + Date.now() + '.sock');
 
@@ -250,13 +250,13 @@ ipcMain.handle('play-video', async (_event, payload) => {
       '--demuxer-readahead-secs=3600',
       `--log-file=${join(os.tmpdir(), 'mpv-crash.log')}`
     ];
-    
+
     if (resumeTime) {
       mpvArgs.push(`--start=${resumeTime}`);
     }
-    
+
     const mpvProcess = spawn(mpvPath, mpvArgs);
-    
+
     let lastTimePos = 0;
     let duration = 0;
     let isCompleted = false;
@@ -264,7 +264,7 @@ ipcMain.handle('play-video', async (_event, payload) => {
     mpvProcess.on('error', (err) => {
       console.error("Falha ao iniciar MPV:", err);
     });
-    
+
     mpvProcess.stdout?.on('data', (data) => {
       console.log(`[MPV stdout]: ${data.toString()}`);
     });
@@ -272,27 +272,27 @@ ipcMain.handle('play-video', async (_event, payload) => {
     mpvProcess.stderr?.on('data', (data) => {
       console.error(`[MPV stderr]: ${data.toString()}`);
     });
-    
+
     mpvProcess.on('close', (code) => {
       console.log(`[MPV] Fechado com código ${code}. Solicitando parada do torrent...`);
-      
+
       let saveProgress = 'false';
       if (lastTimePos > 0 && duration > 0) {
-          const pct = lastTimePos / duration;
-          isCompleted = pct >= 0.90;
-          if (!isCompleted && !isLocalFile) saveProgress = 'true';
-          
-          if (mainWindow && !mainWindow.isDestroyed()) {
-             mainWindow.webContents.send('sync-history', {
-                 animeId: tmdbId,
-                 episodeNumber: episodeNumber,
-                 timestampMillis: Math.floor(lastTimePos * 1000),
-                 durationMillis: Math.floor(duration * 1000),
-                 isCompleted
-             });
-          }
+        const pct = lastTimePos / duration;
+        isCompleted = pct >= 0.90;
+        if (!isCompleted && !isLocalFile) saveProgress = 'true';
+
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('sync-history', {
+            animeId: tmdbId,
+            episodeNumber: episodeNumber,
+            timestampMillis: Math.floor(lastTimePos * 1000),
+            durationMillis: Math.floor(duration * 1000),
+            isCompleted
+          });
+        }
       }
-      
+
       fetch(`http://localhost:8080/api/stop?saveProgress=${saveProgress}&animeId=${tmdbId}&episode=${episodeNumber}`)
         .then(() => console.log("[Go Engine] Torrents parados com sucesso via API."))
         .catch(e => console.error("Falha ao parar torrent via API:", e));
@@ -301,39 +301,39 @@ ipcMain.handle('play-video', async (_event, payload) => {
         mainWindow.webContents.send('player-closed');
       }
     });
-    
+
     // Call AniSkip async, don't await so MPV starts immediately
     if (animeTitle && episodeNumber) {
       console.log(`[Main] Calling AniSkip with title=${animeTitle} episode=${episodeNumber}`);
       fetchAniSkip(animeTitle, episodeNumber, ipcSocketPath);
     }
-    
+
     // IPC Polling properties for History tracking
     setTimeout(() => {
-        const client = netNode.connect(ipcSocketPath, () => {
-             // Observe time-pos
-             client.write(JSON.stringify({ "command": ["observe_property", 1, "time-pos"] }) + "\n");
-             // Observe duration
-             client.write(JSON.stringify({ "command": ["observe_property", 2, "duration"] }) + "\n");
+      const client = netNode.connect(ipcSocketPath, () => {
+        // Observe time-pos
+        client.write(JSON.stringify({ "command": ["observe_property", 1, "time-pos"] }) + "\n");
+        // Observe duration
+        client.write(JSON.stringify({ "command": ["observe_property", 2, "duration"] }) + "\n");
+      });
+
+      client.on('data', (data) => {
+        const lines = data.toString().split('\n');
+        lines.forEach(line => {
+          if (!line.trim()) return;
+          try {
+            const msg = JSON.parse(line);
+            if (msg.event === "property-change") {
+              if (msg.name === "time-pos" && msg.data) lastTimePos = msg.data;
+              if (msg.name === "duration" && msg.data) duration = msg.data;
+            }
+          } catch (e) { }
         });
-        
-        client.on('data', (data) => {
-             const lines = data.toString().split('\n');
-             lines.forEach(line => {
-                 if (!line.trim()) return;
-                 try {
-                     const msg = JSON.parse(line);
-                     if (msg.event === "property-change") {
-                         if (msg.name === "time-pos" && msg.data) lastTimePos = msg.data;
-                         if (msg.name === "duration" && msg.data) duration = msg.data;
-                     }
-                 } catch (e) {}
-             });
-        });
-        
-        client.on('error', () => { /* ignore */ });
+      });
+
+      client.on('error', () => { /* ignore */ });
     }, 2000); // delay to let MPV init the IPC server
-    
+
     return true;
   } catch (e) {
     console.error("Exceção ao iniciar MPV", e);
@@ -358,7 +358,7 @@ app.whenReady().then(() => {
             return Response.redirect(targetUrl, 302);
           }
           const fileUrl = 'file://' + filePath.replace(/\\/g, '/');
-          
+
           return net.fetch(fileUrl);
         }
       }

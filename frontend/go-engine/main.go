@@ -65,7 +65,7 @@ func main() {
 
 func stopHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
-	
+
 	saveProgress := r.URL.Query().Get("saveProgress")
 	animeId := r.URL.Query().Get("animeId")
 	episode := r.URL.Query().Get("episode")
@@ -75,13 +75,13 @@ func stopHandler(w http.ResponseWriter, r *http.Request) {
 		client.Close()
 		client = nil
 	}
-	
+
 	dataDir := filepath.Join(os.TempDir(), "anirom_torrents")
 
 	if saveProgress == "true" && animeId != "" && episode != "" {
 		saveDir := filepath.Join(os.TempDir(), "anirom_saved_progress")
 		os.MkdirAll(saveDir, os.ModePerm)
-		
+
 		var largestFile string
 		var largestSize int64
 		filepath.Walk(dataDir, func(path string, info os.FileInfo, err error) error {
@@ -96,7 +96,7 @@ func stopHandler(w http.ResponseWriter, r *http.Request) {
 			}
 			return nil
 		})
-		
+
 		if largestFile != "" {
 			ext := filepath.Ext(largestFile)
 			dest := filepath.Join(saveDir, fmt.Sprintf("%s_%s%s", animeId, episode, ext))
@@ -107,10 +107,10 @@ func stopHandler(w http.ResponseWriter, r *http.Request) {
 
 	os.RemoveAll(dataDir)
 	fmt.Println("[Go-Engine] Todos os torrents foram parados e cache deletado")
-	
+
 	clientMutex.Unlock()
 	initClient()
-	
+
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -238,10 +238,10 @@ func httpProxyHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		targetURLObj, _ := url.Parse(targetUrl)
-		
+
 		scanner := bufio.NewScanner(bytes.NewReader(bodyBytes))
 		var rewritten bytes.Buffer
-		
+
 		for scanner.Scan() {
 			line := scanner.Text()
 			trimmed := strings.TrimSpace(line)
@@ -272,7 +272,7 @@ func httpProxyHandler(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set(k, v[0])
 			}
 		}
-		
+
 		w.Header().Set("Content-Length", strconv.Itoa(rewritten.Len()))
 		w.WriteHeader(resp.StatusCode)
 		w.Write(rewritten.Bytes())
