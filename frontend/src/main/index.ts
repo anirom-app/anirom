@@ -120,6 +120,8 @@ function createWindow(): void {
   mainWindow = new BrowserWindow({
     width: 1280,
     height: 720,
+    minWidth: 1000,
+    minHeight: 600,
     title: "Anirom",
     show: false,
     autoHideMenuBar: true,

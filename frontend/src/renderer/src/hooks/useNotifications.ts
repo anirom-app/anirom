@@ -106,31 +106,52 @@ export function useNotifications() {
 
     const controller = new AbortController();
 
-    fetchEventSource(`${api.defaults.baseURL}/notifications/stream?userId=${userId}`, {
-      method: "GET",
-      headers: {
-        "Authorization": `Bearer ${token}`
-      },
-      signal: controller.signal,
-      onmessage(event) {
-        try {
-          if (event.data) {
-            const newNotification = JSON.parse(event.data);
-            if (newNotification.type === "PING") return;
-            store.setNotifications(prev => [newNotification, ...prev]);
-            if (!newNotification.read) {
-              store.setUnreadCount(prev => prev + 1);
-            }
+    const connect = () => {
+      fetchEventSource(`${api.defaults.baseURL}/notifications/stream?userId=${userId}`, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${token}`
+        },
+        signal: controller.signal,
+        async onopen(res) {
+          if (res.ok && res.status === 200) {
+            console.log("SSE conectado com sucesso");
+          } else {
+            throw new Error(`SSE error status: ${res.status}`);
           }
-        } catch (err) {
-          console.error("Failed to parse SSE notification", err);
+        },
+        onmessage(event) {
+          try {
+            if (event.data) {
+              const newNotification = JSON.parse(event.data);
+              if (newNotification.type === "PING") return;
+              store.setNotifications(prev => [newNotification, ...prev]);
+              if (!newNotification.read) {
+                store.setUnreadCount(prev => prev + 1);
+              }
+            }
+          } catch (err) {
+            console.error("Failed to parse SSE notification", err);
+          }
+        },
+        onclose() {
+          console.warn("SSE connection closed");
+        },
+        onerror(err) {
+          console.error("SSE connection error", err);
+          return 5000;
         }
-      },
-      onerror(err) {
-        console.error("SSE connection error", err);
-        return 5000;
-      }
-    });
+      }).catch(err => {
+        console.error("SSE fatal error, retrying manually in 5s...", err);
+        setTimeout(() => {
+          if (!controller.signal.aborted) {
+            connect();
+          }
+        }, 5000);
+      });
+    };
+
+    connect();
 
     return () => {
       isSseConnected = false;

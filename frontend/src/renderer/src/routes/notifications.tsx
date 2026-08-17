@@ -1,11 +1,13 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
-import { Bell, Info, AlertTriangle, ShieldCheck, Zap, MonitorUp, Trash2, CheckCheck } from 'lucide-react'
+import { Bell, Info, AlertTriangle, ShieldCheck, Zap, MonitorUp, Trash2, CheckCheck, Archive, ChevronDown, ChevronUp } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { useNotifications, Notification } from '@/hooks/useNotifications'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import { trpc } from '@/main'
+import dragonBg from '@/assets/images/dragon-bg.jpg'
 
 export const Route = createFileRoute('/notifications')({
   component: NotificationsPage,
@@ -24,11 +26,9 @@ function getNotificationIcon(type: Notification['type']) {
     case 'SYSTEM':
       return <AlertTriangle className="w-5 h-5 text-red-400" />
     default:
-      return <Info className="w-5 h-5 text-gray-400" />
+      return <Info className="w-5 h-5 text-zinc-400" />
   }
 }
-
-import { trpc } from '@/main'
 
 function formatNotificationDate(createdAt: any) {
   if (!createdAt) return '';
@@ -67,9 +67,10 @@ function NotificationItem({ notification, index, onDelete, onMarkAsRead }: { not
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.05 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      transition={{ duration: 0.3, delay: index * 0.05, ease: "easeOut" }}
       onClick={(e) => {
         if ((e.target as HTMLElement).closest('button')) return;
         if (!notification.read) {
@@ -79,48 +80,70 @@ function NotificationItem({ notification, index, onDelete, onMarkAsRead }: { not
           navigate({ to: '/animes/$animeId', params: { animeId: notification.referenceId } });
         }
       }}
-      className={`p-4 flex gap-4 transition-colors hover:bg-white/5 cursor-pointer ${
-        !notification.read ? 'bg-primary/5' : ''
-      }`}
+      className={`group relative overflow-hidden rounded-2xl p-5 flex gap-5 transition-all duration-300 cursor-pointer 
+        ${!notification.read 
+          ? 'bg-black/40 backdrop-blur-lg border border-white/10 shadow-lg hover:bg-black/60 hover:border-white/20' 
+          : 'bg-black/20 backdrop-blur-md border border-white/5 hover:bg-white/5 hover:border-white/10 hover:-translate-y-0.5 hover:shadow-xl'
+        }
+      `}
     >
-      <div className="shrink-0 mt-1">
+      {!notification.read && (
+        <div className="absolute top-0 bottom-0 left-0 w-1 bg-red-600 shadow-[2px_0_10px_rgba(220,38,38,0.3)]" />
+      )}
+
+      <div className="shrink-0 mt-0.5">
         {posterUrl ? (
-          <div className="w-16 h-20 rounded-lg overflow-hidden border border-white/10 shadow-[0_4px_12px_rgba(0,0,0,0.5)]">
-             <img src={`anirom://media/?url=${encodeURIComponent(posterUrl)}`} alt="Capa do Anime" className="w-full h-full object-cover" />
+          <div className="w-16 h-20 rounded-xl overflow-hidden shadow-[0_4px_12px_rgba(0,0,0,0.5)] border border-white/10">
+             <img 
+               src={`anirom://media/?url=${encodeURIComponent(posterUrl)}`} 
+               alt="Capa do Anime" 
+               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" 
+             />
           </div>
         ) : (
-          <div className="p-2.5 bg-[#0a0a0a] rounded-xl border border-white/10 shadow-inner">
+          <div className="p-3 bg-white/5 rounded-xl border border-white/10 shadow-inner group-hover:bg-white/10 transition-colors">
             {getNotificationIcon(notification.type)}
           </div>
         )}
       </div>
       
-      <div className="flex-1 space-y-1 pt-2">
+      <div className="flex-1 space-y-2 pt-1">
         <div className="flex items-start justify-between gap-4">
-          <h3 className={`text-base font-semibold ${!notification.read ? 'text-white' : 'text-gray-200'}`}>
+          <h3 className={`text-base tracking-wide transition-colors ${!notification.read ? 'text-white font-semibold' : 'text-zinc-300 font-medium group-hover:text-white'}`}>
             {notification.title}
           </h3>
-          <span className="text-xs text-muted-foreground whitespace-nowrap">
+          <span className="text-xs font-medium text-zinc-500 whitespace-nowrap bg-black/30 px-2.5 py-1 rounded-full border border-white/5">
             {formatNotificationDate(notification.createdAt)}
           </span>
         </div>
-        <p className="text-sm text-gray-400 leading-relaxed">
+        <p className="text-sm text-zinc-400 leading-relaxed max-w-[92%] group-hover:text-zinc-300 transition-colors">
           {notification.message}
         </p>
       </div>
-
-      {!notification.read && (
-        <div className="shrink-0 flex items-center pr-2">
-          <div className="w-2.5 h-2.5 bg-primary rounded-full shadow-[0_0_10px_rgba(157,78,221,0.8)]" />
-        </div>
-      )}
       
-      <div className="shrink-0 flex items-center">
+      <div className="absolute right-5 top-2/3 -translate-y-1/2 flex items-center  gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-2 group-hover:translate-x-0">
+        {!notification.read && (
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="rounded-full bg-black/60 backdrop-blur-md border border-white/10 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/20 hover:border-emerald-500/30 transition-all shadow-lg"
+            onClick={(e) => {
+              e.stopPropagation();
+              onMarkAsRead(notification.id);
+            }}
+            title="Marcar como lida"
+          >
+            <CheckCheck className="w-4 h-4" />
+          </Button>
+        )}
         <Button 
           variant="ghost" 
           size="icon" 
-          className="text-zinc-500 hover:text-red-400 hover:bg-red-400/10"
-          onClick={() => onDelete(notification.id)}
+          className="rounded-full bg-black/60 backdrop-blur-md border border-white/10 text-zinc-400 hover:text-red-400 hover:bg-red-500/20 hover:border-red-500/30 transition-all shadow-lg"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete(notification.id);
+          }}
           title="Excluir notificação"
         >
           <Trash2 className="w-4 h-4" />
@@ -132,28 +155,42 @@ function NotificationItem({ notification, index, onDelete, onMarkAsRead }: { not
 
 export function NotificationsPage() {
   const { notifications, loading, unreadCount, hasMore, loadMore, markAllAsRead, markAsRead, deleteNotification } = useNotifications()
+  const [showArchived, setShowArchived] = useState(false);
+
+  const unreadNotifications = notifications.filter(n => !n.read);
+  const readNotifications = notifications.filter(n => n.read);
 
   return (
-   
     <main className="flex-1 ml-0 md:ml-20 relative min-h-screen overflow-x-hidden pt-24 px-6 md:px-8 pb-20">
-      <div className="max-w-4xl mx-auto">
-        <header className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-3">
-            <div className="p-3  rounded-2xl">
-              <Bell className="w-8 h-8 text-primary" />
-            </div>
+      {/* Dragon Background Overlay Leaning on Header */}
+      <div 
+        className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[527px] z-0 pointer-events-none opacity-60"
+        style={{
+          backgroundImage: `url(${dragonBg})`,
+          backgroundSize: '100% auto',
+          backgroundPosition: 'top center',
+          backgroundRepeat: 'no-repeat',
+          mixBlendMode: 'screen',
+          maskImage: 'linear-gradient(to bottom, black 0%, transparent 100%)',
+          WebkitMaskImage: 'linear-gradient(to bottom, black 40%, transparent 100%)'
+        }}
+      />
+      <div className="max-w-4xl mx-auto relative z-10">
+        <header className="flex flex-col sm:flex-row sm:items-center justify-between mb-10 gap-6">
+          <div className="flex items-center gap-4">
             <div>
-              <h1 className="text-3xl font-bold font-heading tracking-tight">Notificações</h1>
-              <p className="text-muted-foreground font-sans mt-1">
+              <h1 className="text-3xl font-bold font-heading tracking-tight text-white drop-shadow-md">Notificações</h1>
+              <p className="text-zinc-400 font-sans mt-1.5">
                 Fique por dentro das novidades e alertas da sua conta.
               </p>
             </div>
           </div>
+          
           <div className="flex items-center gap-4">
             {unreadCount > 0 && (
-              <div className="px-4 py-1.5 bg-primary/10 border border-primary/20 rounded-full">
-                <span className="text-primary font-medium text-sm">
-                  {unreadCount} não lidas
+              <div className="px-4 py-1.5 bg-primary/10 border border-primary/30 rounded-full shadow-[0_0_15px_rgba(157,78,221,0.2)]">
+                <span className="text-primary font-semibold text-sm tracking-wide">
+                  {unreadCount} {unreadCount === 1 ? 'não lida' : 'não lidas'}
                 </span>
               </div>
             )}
@@ -163,66 +200,119 @@ export function NotificationsPage() {
                 variant="outline" 
                 size="sm" 
                 onClick={markAllAsRead}
-                className="border-white/10 bg-white/5 hover:bg-white/10 text-zinc-300"
+                className="rounded-full backdrop-blur-md bg-white/5 border border-white/10 hover:bg-white/10 text-white transition-all shadow-lg"
               >
-                <CheckCheck className="w-4 h-4 mr-2" />
-                Marcar todas como lidas
+                <CheckCheck className="w-4 h-4 mr-2 text-primary" />
+                Marcar todas lidas
               </Button>
             )}
           </div>
         </header>
 
-        <section className="bg-white/5 border border-white/10 rounded-3xl overflow-hidden backdrop-blur-xl shadow-2xl">
-          {loading && notifications.length === 0 ? (
-            <div className="flex flex-col items-center justify-center p-12 text-muted-foreground">
-              <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin mb-4" />
-              <p>Carregando notificações...</p>
+        {loading && notifications.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 text-zinc-500">
+            <div className="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin mb-6 shadow-[0_0_15px_rgba(157,78,221,0.3)]" />
+            <p className="font-medium tracking-wide">Sincronizando notificações...</p>
+          </div>
+        ) : notifications.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-24 text-center">
+            <div className="p-6 bg-white/5 rounded-full mb-6 border border-white/5 shadow-inner">
+              <Bell className="w-14 h-14 text-white/10" />
             </div>
-          ) : notifications.length === 0 ? (
-            <div className="flex flex-col items-center justify-center p-16 text-center">
-              <div className="p-4 bg-white/5 rounded-full mb-4">
-                <Bell className="w-12 h-12 text-white/20" />
+            <h2 className="text-2xl font-bold mb-3 text-zinc-200">Nada por aqui...</h2>
+            <p className="text-zinc-500 max-w-sm mx-auto leading-relaxed">
+              Você não possui nenhuma notificação no momento. Quando algo incrível acontecer, avisaremos você!
+            </p>
+          </div>
+        ) : (
+          <div className="flex flex-col pb-8">
+            {unreadNotifications.length > 0 && (
+              <div className="mb-8">
+                <div className="mb-4 ml-1">
+                  <h2 className="text-lg font-bold text-white tracking-wider uppercase flex items-center gap-3 opacity-90">
+                    <span className="w-1.5 h-5 rounded-full bg-red-600 shadow-[0_0_10px_rgba(220,38,38,0.6)]" />
+                    Novas Notificações
+                  </h2>
+                </div>
+                <div className="flex flex-col gap-3">
+                  <AnimatePresence>
+                    {unreadNotifications.map((notification, index) => (
+                      <NotificationItem 
+                        key={notification.id} 
+                        notification={notification} 
+                        index={index} 
+                        onDelete={deleteNotification}
+                        onMarkAsRead={markAsRead}
+                      />
+                    ))}
+                  </AnimatePresence>
+                </div>
               </div>
-              <h2 className="text-xl font-semibold mb-2">Nada por aqui...</h2>
-              <p className="text-muted-foreground max-w-sm mx-auto">
-                Você não possui nenhuma notificação no momento. Volte mais tarde!
-              </p>
-            </div>
-          ) : (
-            <div className="flex flex-col">
-              <div className="divide-y divide-white/5">
+            )}
+
+            {readNotifications.length > 0 && (
+              <div className="mt-4">
+                <button 
+                  onClick={() => setShowArchived(!showArchived)}
+                  className="w-full flex items-center justify-between px-6 py-4 bg-black/40 backdrop-blur-md border border-white/5 rounded-2xl hover:bg-white/5 hover:border-white/10 transition-all group"
+                >
+                  <div className="flex items-center gap-3">
+                    <Archive className="w-5 h-5 text-zinc-500 group-hover:text-zinc-400 transition-colors" />
+                    <h2 className="text-base font-medium text-zinc-400 group-hover:text-zinc-300 transition-colors">
+                      Mensagens Lidas ({readNotifications.length})
+                    </h2>
+                  </div>
+                  {showArchived ? (
+                    <ChevronUp className="w-5 h-5 text-zinc-500 group-hover:text-zinc-400 transition-colors" />
+                  ) : (
+                    <ChevronDown className="w-5 h-5 text-zinc-500 group-hover:text-zinc-400 transition-colors" />
+                  )}
+                </button>
+                
                 <AnimatePresence>
-                  {notifications.map((notification, index) => (
-                    <NotificationItem 
-                      key={notification.id} 
-                      notification={notification} 
-                      index={index} 
-                      onDelete={deleteNotification}
-                      onMarkAsRead={markAsRead}
-                    />
-                  ))}
+                  {showArchived && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="flex flex-col gap-3 mt-4 opacity-80 hover:opacity-100 transition-opacity duration-500">
+                        {readNotifications.map((notification, index) => (
+                          <NotificationItem 
+                            key={notification.id} 
+                            notification={notification} 
+                            index={index} 
+                            onDelete={deleteNotification}
+                            onMarkAsRead={markAsRead}
+                          />
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
                 </AnimatePresence>
               </div>
-              {hasMore && (
-                <div className="p-4 border-t border-white/5 flex justify-center">
-                  <Button 
-                    variant="ghost" 
-                    onClick={loadMore} 
-                    disabled={loading}
-                    className="text-zinc-400 hover:text-white"
-                  >
-                    {loading ? (
-                      <span className="flex items-center">
-                        <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin mr-2" />
-                        Carregando...
-                      </span>
-                    ) : 'Carregar mais'}
-                  </Button>
-                </div>
-              )}
-            </div>
-          )}
-        </section>
+            )}
+            
+            {hasMore && (
+              <div className="mt-8 flex justify-center">
+                <Button 
+                  variant="outline" 
+                  onClick={loadMore} 
+                  disabled={loading}
+                  className="rounded-full backdrop-blur-md bg-white/5 border border-white/10 hover:bg-white/10 text-zinc-300 transition-all shadow-lg px-6"
+                >
+                  {loading ? (
+                    <span className="flex items-center">
+                      <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin mr-2" />
+                      Carregando...
+                    </span>
+                  ) : 'Carregar mensagens antigas'}
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </main>
   )
