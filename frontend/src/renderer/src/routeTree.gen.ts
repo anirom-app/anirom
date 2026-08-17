@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ExploreRouteImport } from './routes/explore'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as NotificationsRouteImport } from './routes/notifications'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as SalvosRouteImport } from './routes/salvos'
 import { Route as SearchRouteImport } from './routes/search'
@@ -32,6 +33,11 @@ const ExploreRoute = ExploreRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NotificationsRoute = NotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RegisterRoute = RegisterRouteImport.update({
@@ -70,6 +76,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/explore': typeof ExploreRoute
   '/login': typeof LoginRoute
+  '/notifications': typeof NotificationsRoute
   '/register': typeof RegisterRoute
   '/salvos': typeof SalvosRoute
   '/search': typeof SearchRoute
@@ -81,6 +88,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/explore': typeof ExploreRoute
   '/login': typeof LoginRoute
+  '/notifications': typeof NotificationsRoute
   '/register': typeof RegisterRoute
   '/salvos': typeof SalvosRoute
   '/search': typeof SearchRoute
@@ -93,6 +101,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/explore': typeof ExploreRoute
   '/login': typeof LoginRoute
+  '/notifications': typeof NotificationsRoute
   '/register': typeof RegisterRoute
   '/salvos': typeof SalvosRoute
   '/search': typeof SearchRoute
@@ -106,6 +115,7 @@ export interface FileRouteTypes {
     | '/'
     | '/explore'
     | '/login'
+    | '/notifications'
     | '/register'
     | '/salvos'
     | '/search'
@@ -117,6 +127,7 @@ export interface FileRouteTypes {
     | '/'
     | '/explore'
     | '/login'
+    | '/notifications'
     | '/register'
     | '/salvos'
     | '/search'
@@ -128,6 +139,7 @@ export interface FileRouteTypes {
     | '/'
     | '/explore'
     | '/login'
+    | '/notifications'
     | '/register'
     | '/salvos'
     | '/search'
@@ -140,6 +152,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ExploreRoute: typeof ExploreRoute
   LoginRoute: typeof LoginRoute
+  NotificationsRoute: typeof NotificationsRoute
   RegisterRoute: typeof RegisterRoute
   SalvosRoute: typeof SalvosRoute
   SearchRoute: typeof SearchRoute
@@ -168,6 +181,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/notifications': {
+      id: '/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof NotificationsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/register': {
@@ -231,6 +251,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ExploreRoute: ExploreRoute,
   LoginRoute: LoginRoute,
+  NotificationsRoute: NotificationsRoute,
   RegisterRoute: RegisterRoute,
   SalvosRoute: SalvosRoute,
   SearchRoute: SearchRoute,

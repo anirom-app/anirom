@@ -1,6 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { historySyncService } from './HistorySyncService';
 import { useAuthStore } from '../hooks/useAuthStore';
+import { api } from './api';
+
+vi.mock('./api', () => ({
+  api: {
+    post: vi.fn(),
+  },
+}));
 
 describe('HistorySyncService', () => {
   beforeEach(() => {
@@ -15,20 +22,17 @@ describe('HistorySyncService', () => {
     ];
     localStorage.setItem('anirom_offline_history_queue', JSON.stringify(offlineQueue));
 
-    globalThis.fetch = vi.fn().mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ isCompleted: false }),
+    (api.post as any).mockResolvedValueOnce({
+      data: { isCompleted: false },
     });
 
     await historySyncService.syncOfflineQueue();
 
-    expect(globalThis.fetch).toHaveBeenCalledWith(
-      'http://localhost:9000/api/v1/history',
+    expect(api.post).toHaveBeenCalledWith(
+      '/history',
       expect.objectContaining({
-        method: 'POST',
-        headers: expect.objectContaining({
-          Authorization: 'Bearer mock-jwt-token',
-        }),
+        animeId: 'naruto',
+        episodeNumber: '1',
       })
     );
 
@@ -41,7 +45,7 @@ describe('HistorySyncService', () => {
     ];
     localStorage.setItem('anirom_offline_history_queue', JSON.stringify(offlineQueue));
 
-    globalThis.fetch = vi.fn().mockRejectedValueOnce(new Error('Network offline'));
+    (api.post as any).mockRejectedValueOnce(new Error('Network offline'));
 
     await historySyncService.syncOfflineQueue();
 

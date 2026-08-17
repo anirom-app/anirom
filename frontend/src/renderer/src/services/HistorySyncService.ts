@@ -1,4 +1,5 @@
 import { useAuthStore } from '../hooks/useAuthStore';
+import { api } from './api';
 
 const OFFLINE_HISTORY_QUEUE_KEY = 'anirom_offline_history_queue';
 
@@ -29,18 +30,7 @@ class HistorySyncService {
     if (!token) return; // User must be logged in
 
     try {
-      const response = await fetch('http://localhost:9000/api/v1/history', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(payload)
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to sync history with backend');
-      }
+      await api.post('/history', payload);
       console.log('[HistorySync] Sincronizado com sucesso', payload);
     } catch (e) {
       console.warn('[HistorySync] Offline ou falha na API. Salvando na fila local...', e);
@@ -82,18 +72,7 @@ class HistorySyncService {
       
       for (const payload of queue) {
         try {
-          const response = await fetch('http://localhost:9000/api/v1/history', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify(payload)
-          });
-          
-          if (!response.ok) {
-             failedItems.push(payload);
-          }
+          await api.post('/history', payload);
         } catch (e) {
           failedItems.push(payload);
         }

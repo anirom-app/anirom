@@ -1,6 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "./ui/dialog";
 import { useState, useEffect } from "react";
 import { Loader2 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 
 interface AnimeDetailsModalProps {
   isOpen: boolean;
@@ -9,97 +10,88 @@ interface AnimeDetailsModalProps {
 }
 
 export function AnimeDetailsModal({ isOpen, onOpenChange, anime }: AnimeDetailsModalProps) {
-  const [brCast, setBrCast] = useState<any[]>([]);
-  const [aniCreator, setAniCreator] = useState<any>(null);
-  const [isBrLoading, setIsBrLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'br' | 'jp'>('br');
 
-  useEffect(() => {
-    if (isOpen && anime?.name) {
-      const fetchBrCast = async () => {
-        setIsBrLoading(true);
-        try {
-          const query = `
-            query ($search: String) {
-              Media(search: $search, type: ANIME) {
-                staff(sort: RELEVANCE, perPage: 10) {
-                  edges {
-                    role
-                    node {
-                      name { full }
-                    }
+  const { data: anilistData, isLoading: isBrLoading } = useQuery({
+    queryKey: ['anilistCast', anime?.name],
+    queryFn: async () => {
+      const query = `
+        query ($search: String) {
+          Media(search: $search, type: ANIME) {
+            staff(sort: RELEVANCE, perPage: 10) {
+              edges {
+                role
+                node {
+                  name { full }
+                }
+              }
+            }
+            characters(sort: ROLE, page: 1, perPage: 15) {
+              edges {
+                node {
+                  name {
+                    full
                   }
                 }
-                characters(sort: ROLE, page: 1, perPage: 15) {
-                  edges {
-                    node {
-                      name {
-                        full
-                      }
+                voiceActorRoles {
+                  voiceActor {
+                    id
+                    name {
+                      full
                     }
-                    voiceActorRoles {
-                      voiceActor {
-                        id
-                        name {
-                          full
-                        }
-                        image {
-                          large
-                        }
-                        languageV2
-                      }
+                    image {
+                      large
                     }
+                    languageV2
                   }
                 }
               }
             }
-          `;
-          const res = await fetch("https://graphql.anilist.co", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ query, variables: { search: anime.name } })
-          });
-          const data = await res.json();
-          
-          // Parse Creator
-          const staffEdges = data?.data?.Media?.staff?.edges || [];
-          const originalCreatorEdge = staffEdges.find((edge: any) => edge.role?.toLowerCase().includes("original creator") || edge.role?.toLowerCase().includes("creator"));
-          if (originalCreatorEdge) {
-            setAniCreator({
-              name: originalCreatorEdge.node?.name?.full
-            });
-          } else {
-            setAniCreator(null);
           }
-
-          // Parse Cast
-          const edges = data?.data?.Media?.characters?.edges || [];
-          const parsedCast = edges
-            .map((edge: any) => {
-              const ptRole = edge.voiceActorRoles?.find((role: any) => role.voiceActor?.languageV2 === "Portuguese");
-              if (!ptRole) return null;
-              return {
-                characterName: edge.node?.name?.full,
-                actorId: ptRole.voiceActor.id,
-                actorName: ptRole.voiceActor.name?.full,
-                actorImage: ptRole.voiceActor.image?.large
-              };
-            })
-            .filter(Boolean);
-
-          setBrCast(parsedCast);
-          if (parsedCast.length > 0) setActiveTab('br');
-          else setActiveTab('jp');
-        } catch (error) {
-          console.error("Failed to fetch BR cast", error);
-          setActiveTab('jp');
-        } finally {
-          setIsBrLoading(false);
         }
-      };
-      fetchBrCast();
+      `;
+      const res = await fetch("https://graphql.anilist.co", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query, variables: { search: anime.name } })
+      });
+      const data = await res.json();
+      
+      // Parse Creator
+      const staffEdges = data?.data?.Media?.staff?.edges || [];
+      const originalCreatorEdge = staffEdges.find((edge: any) => edge.role?.toLowerCase().includes("original creator") || edge.role?.toLowerCase().includes("creator"));
+      const creator = originalCreatorEdge ? { name: originalCreatorEdge.node?.name?.full } : null;
+
+      // Parse Cast
+      const edges = data?.data?.Media?.characters?.edges || [];
+      const parsedCast = edges
+        .map((edge: any) => {
+          const ptRole = edge.voiceActorRoles?.find((role: any) => role.voiceActor?.languageV2 === "Portuguese");
+          if (!ptRole) return null;
+          return {
+            characterName: edge.node?.name?.full,
+            actorId: ptRole.voiceActor.id,
+            actorName: ptRole.voiceActor.name?.full,
+            actorImage: ptRole.voiceActor.image?.large
+          };
+        })
+        .filter(Boolean);
+
+      return { creator, cast: parsedCast };
+    },
+    enabled: !!anime?.name && isOpen,
+    staleTime: 1000 * 60 * 60, // 1 hora de cache (evita requests repetidos)
+  });
+
+  const aniCreator = anilistData?.creator;
+  const brCast = anilistData?.cast || [];
+
+  // Ajusta a tab automaticamente quando os dados chegam
+  useEffect(() => {
+    if (anilistData) {
+      setActiveTab(anilistData.cast.length > 0 ? 'br' : 'jp');
     }
-  }, [isOpen, anime]);
+  }, [anilistData]);
 
   if (!anime) return null;
 
@@ -123,7 +115,7 @@ export function AnimeDetailsModal({ isOpen, onOpenChange, anime }: AnimeDetailsM
           {/* Right Side - Details */}
           <div className="w-full md:w-2/3 flex flex-col p-6">
             <DialogHeader className="mb-4 text-left">
-              <DialogTitle className="text-2xl md:text-3xl font-bold font-pirata tracking-wide">
+              <DialogTitle className="text-2xl md:text-3xl font-bold font-heading tracking-wide">
                 {anime.name}
               </DialogTitle>
               {anime.original_name && anime.original_name !== anime.name && (

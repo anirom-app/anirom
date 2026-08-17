@@ -59,7 +59,7 @@ export function ContinueWatchingCard({ item }: { item: any }) {
           </div>
           
           <div className="mt-2.5 h-1.5 w-full bg-white/10 rounded-full overflow-hidden backdrop-blur-sm border border-white/5">
-             <Progress value={progress} className="h-full bg-primary" />
+             <Progress value={progress} className="h-full bg-transparent" />
           </div>
         </div>
       </ParallaxCard>

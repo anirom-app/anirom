@@ -24,7 +24,7 @@ function SearchPage() {
     <div className="min-h-screen bg-background text-foreground flex">
       
       
-      <main className="flex-1 ml-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-12 w-full">
+      <main className="flex-1 ml-20 mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-12 w-full">
         <div className="mb-8">
           <h1 className="text-3xl font-heading font-bold">
             Resultados para: <span className="text-primary">"{query}"</span>

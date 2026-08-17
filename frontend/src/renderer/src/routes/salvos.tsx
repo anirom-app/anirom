@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useAuthStore } from "@/hooks/useAuthStore";
 import { Navbar } from "@/components/Navbar";
 import { AnimeCard } from "@/components/AnimeCard";
@@ -113,6 +113,66 @@ function SalvosPage() {
     setSelectedIds([]);
   };
 
+  const getBadgeText = (anime: any) => {
+    // 1. Verifica se teve ESTREIA de temporada inteira recentemente
+    if (anime.seasons) {
+      let isComingSoon = false;
+      let hasRecentPremiere = false;
+
+      anime.seasons.forEach((s: any) => {
+        if (!s.air_date) return;
+        const airDate = new Date(s.air_date);
+        const now = new Date();
+        const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+        const thirtyDaysFuture = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+
+        if (airDate >= thirtyDaysAgo && airDate <= now) {
+          hasRecentPremiere = true;
+        } else if (airDate > now && airDate <= thirtyDaysFuture) {
+          isComingSoon = true;
+        }
+      });
+
+      if (hasRecentPremiere) return "Nova Temporada";
+      if (isComingSoon) return "Temp. Em Breve"; // Texto encurtado para caber no layout
+    }
+
+    // 2. Se a temporada já lançou há mais de 30 dias, mas AINDA lança episódios inéditos
+    if (anime.next_episode_to_air) {
+      return "Novos Episódios";
+    }
+
+    if (anime.last_air_date) {
+      const lastAirDate = new Date(anime.last_air_date);
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      if (lastAirDate >= thirtyDaysAgo) {
+        return "Novos Episódios";
+      }
+    }
+
+    return null;
+  };
+
+  const sortedAnimes = useMemo(() => {
+    return [...savedAnimes].sort((a, b) => {
+      const badgeA = getBadgeText(a);
+      const badgeB = getBadgeText(b);
+      
+      if (badgeA && !badgeB) return -1;
+      if (!badgeA && badgeB) return 1;
+      
+      // Prioridade: Nova Temporada > Novos Episódios > Temp. Em Breve
+      const getPriority = (badge: string | null) => {
+        if (badge === "Nova Temporada") return 3;
+        if (badge === "Novos Episódios") return 2;
+        if (badge === "Temp. Em Breve") return 1;
+        return 0;
+      };
+
+      return getPriority(badgeB) - getPriority(badgeA);
+    });
+  }, [savedAnimes]);
+
   if (isLoadingSaved || isLoadingDetails) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background pl-20">
@@ -171,7 +231,7 @@ function SalvosPage() {
           )}
         </div>
         
-        {savedAnimes.length === 0 ? (
+        {sortedAnimes.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
             <p className="text-xl text-muted-foreground">Você ainda não salvou nenhum anime.</p>
             <button 
@@ -184,9 +244,10 @@ function SalvosPage() {
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
             <AnimatePresence>
-              {savedAnimes.map((anime) => {
+              {sortedAnimes.map((anime) => {
                 const animeIdStr = anime.id.toString();
                 const isSelected = selectedIds.includes(animeIdStr);
+                const badgeText = getBadgeText(anime);
 
                 return (
                   <motion.div 
@@ -220,7 +281,7 @@ function SalvosPage() {
                     }}
                   >
                     <div className={isEditing ? "pointer-events-none" : ""}>
-                      <AnimeCard anime={anime} />
+                      <AnimeCard anime={anime} badgeText={badgeText || undefined} />
                     </div>
 
                     {isEditing && (

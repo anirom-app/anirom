@@ -4,9 +4,10 @@ import { ParallaxCard } from "./ParallaxCard";
 
 interface AnimeCardProps {
   anime: any;
+  badgeText?: string;
 }
 
-export function AnimeCard({ anime }: AnimeCardProps) {
+export function AnimeCard({ anime, badgeText }: AnimeCardProps) {
   const tmdbUrl = anime.poster_path 
     ? `https://image.tmdb.org/t/p/w500${anime.poster_path}`
     : "https://via.placeholder.com/500x750?text=Sem+Capa";
@@ -37,6 +38,9 @@ export function AnimeCard({ anime }: AnimeCardProps) {
         
         {/* Glassmorphic Bottom Panel */}
         <div className="absolute inset-x-0 bottom-0 pt-12 pb-3.5 px-3.5 flex flex-col justify-end pointer-events-none z-20 transition-transform duration-300 group-hover:translate-y-[-2px]">
+          {badgeText && (
+            <span className="text-[9px] font-bold text-white border border-red-400 bg-red-400/50 px-2 py-1 rounded-md w-fit mb-1 uppercase tracking-wider drop-shadow-md whitespace-nowrap">{badgeText}</span>
+          )}
           <h3 className="font-semibold text-xs md:text-sm text-white line-clamp-1 group-hover:text-primary transition-colors tracking-tight">
             {anime.name}
           </h3>

@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { keepPreviousData } from '@tanstack/react-query'
 import { trpc } from '@/main'
 import { Navbar } from '@/components/Navbar'
@@ -59,6 +59,11 @@ function ExplorePage() {
     }
   )
 
+  // Scroll to top whenever page changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [page])
+
   const handleNextPage = () => {
     if (data && page < data.total_pages) {
       setPage((p) => p + 1)
@@ -88,8 +93,8 @@ function ExplorePage() {
   return (
     <div className="min-h-screen bg-background text-foreground pb-20 flex overflow-x-hidden">
       
-      <main className="flex-1 min-w-0 overflow-x-hidden md:ml-20 px-6 md:px-16 pt-24 pb-12">
-        <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+      <main className="flex-1 min-w-0 overflow-x-hidden md:ml-20 pb-16 md:pb-0 relative min-h-screen pt-24">
+        <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4 px-8">
           <div>
             <h1 className="text-3xl font-heading font-bold text-white">
               {selectedGenres.length === 0 ? "Descobrir Categorias" : "Animes Filtrados"}
@@ -190,14 +195,14 @@ function ExplorePage() {
               </div>
             ) : (
               <>
-                <div className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6 transition-opacity duration-300 ${isPlaceholderData ? 'opacity-50' : 'opacity-100'}`}>
+                <div className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6 transition-opacity duration-300 px-6 md:px-16 ${isPlaceholderData ? 'opacity-50' : 'opacity-100'}`}>
                   {data?.results?.map((anime: any) => (
                     <AnimeCard key={anime.id} anime={anime} />
                   ))}
                 </div>
 
                 {data?.results?.length === 0 && (
-                  <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
+                  <div className="flex flex-col items-center justify-center py-20 text-muted-foreground px-6 md:px-16">
                     <p>Nenhum anime encontrado para os gêneros selecionados.</p>
                   </div>
                 )}

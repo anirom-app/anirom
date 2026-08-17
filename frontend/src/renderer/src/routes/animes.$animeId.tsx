@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import logoImg from "../assets/images/anirom-logo.png";
 import { useToast } from "@/hooks/use-toast";
 import { AnimeDetailsModal } from "@/components/AnimeDetailsModal";
+import { ParallaxCard } from "@/components/ParallaxCard";
 
 export const Route = createFileRoute('/animes/$animeId')({
   component: AnimeDetailsPage,
@@ -164,20 +165,33 @@ function AnimeDetailsPage() {
 
           {/* Seasons Tabs */}
           <div className="flex items-center gap-8 border-b border-white/10 mb-6 overflow-x-auto scrollbar-hide -mr-12 md:-mr-24 pr-12 md:pr-24">
-            {seasonsArray.map((seasonNum) => (
-              <button
-                key={seasonNum}
-                onClick={() => setActiveSeason(seasonNum)}
-                className={`pb-4 text-lg font-semibold transition-colors relative whitespace-nowrap ${
-                  activeSeason === seasonNum ? 'text-white' : 'text-muted-foreground hover:text-white/80'
-                }`}
-              >
-                Season {seasonNum}
-                {activeSeason === seasonNum && (
-                  <div className="absolute bottom-0 left-0 w-full h-1 bg-white rounded-t-full" />
-                )}
-              </button>
-            ))}
+            {seasonsArray.map((seasonNum) => {
+              const tmdbSeason = anime?.seasons?.find((s: any) => s.season_number === seasonNum);
+              const isNew = tmdbSeason?.air_date 
+                ? new Date(tmdbSeason.air_date) >= new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) && new Date(tmdbSeason.air_date) <= new Date()
+                : false;
+              
+              const isComingSoon = tmdbSeason?.air_date
+                ? new Date(tmdbSeason.air_date) > new Date() && new Date(tmdbSeason.air_date) <= new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+                : false;
+              
+              return (
+                <button
+                  key={seasonNum}
+                  onClick={() => setActiveSeason(seasonNum)}
+                  className={`pb-4 text-lg font-semibold transition-colors relative whitespace-nowrap flex items-center ${
+                    activeSeason === seasonNum ? 'text-white' : 'text-muted-foreground hover:text-white/80'
+                  }`}
+                >
+                  Season {seasonNum}
+                  {isNew && <span className="ml-2 text-[10px] font-bold text-white uppercase px-1.5 py-0.5 bg-red-400/50 rounded-md border border-red-400">Nova</span>}
+                  {isComingSoon && <span className="ml-2 text-[10px] font-bold text-white uppercase px-1.5 py-0.5 bg-blue-500/50 rounded-md border border-blue-500">Em Breve</span>}
+                  {activeSeason === seasonNum && (
+                    <div className="absolute bottom-0 left-0 w-full h-1 bg-white rounded-t-full" />
+                  )}
+                </button>
+              );
+            })}
           </div>
 
           {/* Episode Carousel */}
@@ -191,28 +205,36 @@ function AnimeDetailsPage() {
                 <div 
                   key={ep.id} 
                   onClick={() => navigate({ to: '/animes/$animeId/$episodeNumber', params: { animeId: String(animeId), episodeNumber: String(ep.episode_number) } })}
-                  className="relative flex-none w-[280px] h-[160px] rounded-xl overflow-hidden cursor-pointer group snap-start border border-white/10 shadow-lg"
+                  className="relative flex-none w-[282px] h-[190px] cursor-pointer snap-start"
                 >
-                  <img 
-                    src={`anirom://media/?url=${encodeURIComponent(ep.still_path ? `https://image.tmdb.org/t/p/w500${ep.still_path}` : `https://image.tmdb.org/t/p/w500${anime.backdrop_path}`)}`} 
-                    alt={ep.name}
-                    loading="lazy"
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                  
-                  {/* Bottom Gradient for Episode Text */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent opacity-80" />
-                  
-                  {/* Hover play overlay */}
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Play className="w-12 h-12 text-white fill-white/80" />
-                  </div>
-                  
-                  <div className="absolute bottom-0 left-0 w-full p-4">
-                    <h3 className="text-white font-semibold text-sm line-clamp-1 group-hover:text-primary transition-colors">
-                      Episode {ep.episode_number}: {ep.name}
-                    </h3>
-                  </div>
+                  <ParallaxCard className="w-full h-full group bg-[#0a0a0a]">
+                    <img 
+                      src={`anirom://media/?url=${encodeURIComponent(ep.still_path ? `https://image.tmdb.org/t/p/w500${ep.still_path}` : `https://image.tmdb.org/t/p/w500${anime.backdrop_path}`)}`} 
+                      alt={ep.name}
+                      loading="lazy"
+                      className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-108"
+                    />
+                    
+                    {/* Ambient Dark Gradient Overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent opacity-85 group-hover:opacity-95 transition-opacity duration-300 pointer-events-none" />
+                    
+                    {/* Hover play overlay */}
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/20 pointer-events-none z-20">
+                      <div className="p-3.5 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white shadow-2xl transition-transform duration-300 group-hover:scale-110">
+                        <Play className="w-6 h-6 fill-white text-white translate-x-0.5" />
+                      </div>
+                    </div>
+                    
+                    {/* Glassmorphic Info Panel */}
+                    <div className="absolute bottom-0 left-0 right-0 p-3.5 pointer-events-none z-20 transition-transform duration-300 group-hover:translate-y-[-2px]">
+                      <h3 className="text-white font-bold text-sm md:text-base line-clamp-1 group-hover:text-primary transition-colors tracking-tight shadow-sm">
+                        Episódio {ep.episode_number}
+                      </h3>
+                      <div className="flex items-center gap-1.5 text-zinc-300 text-xs md:text-sm font-medium mt-0.5 line-clamp-1 drop-shadow-md">
+                        {ep.name}
+                      </div>
+                    </div>
+                  </ParallaxCard>
                 </div>
               ))
             )}
