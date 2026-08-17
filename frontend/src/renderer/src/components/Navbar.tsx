@@ -13,7 +13,8 @@ import {
   Settings,
   Search,
   Bookmark,
-  ListSortDescending
+  ListSortDescending,
+  Puzzle
 } from "lucide-react";
 import { useAuthStore } from "@/hooks/useAuthStore";
 import { UserProfileModal } from "@/components/UserProfileModal";
@@ -95,7 +96,7 @@ export function Navbar() {
               pathname === "/settings" && "bg-white/10 text-white"
             )}
           >
-            <Settings className="w-5 h-5 md:w-6 md:h-6" strokeWidth={2} />
+            <Puzzle className="w-5 h-5 md:w-6 md:h-6" strokeWidth={2} />
             <span className="absolute left-14 bg-popover text-popover-foreground text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
               Settings
             </span>

@@ -4,6 +4,7 @@ export interface TorrentioStream {
   name: string;
   title: string;
   url?: string;
+  logo?: string;
   infoHash?: string;
   fileIdx?: number;
   addonName?: string;

@@ -4,6 +4,7 @@ import { persist } from 'zustand/middleware';
 export interface Addon {
   url: string;
   name: string;
+  logo?: string;
 }
 
 interface AddonState {
@@ -16,7 +17,7 @@ export const useAddonStore = create<AddonState>()(
   persist(
     (set) => ({
       addons: [
-        { url: 'https://torrentio.strem.fun/manifest.json', name: 'Torrentio' }
+        { url: 'https://torrentio.strem.fun/manifest.json', name: 'Torrentio', logo: 'https://torrentio.strem.fun/static/logo.png' }
       ],
       addAddon: (addon) => set((state) => ({ 
         addons: state.addons.some(a => a.url === addon.url) 

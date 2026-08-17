@@ -50,8 +50,9 @@ function SettingsPage() {
       const manifest = await utils.fetchAddonManifest.fetch({ target: url });
       
       const name = manifest.name || "Addon Desconhecido";
+      const logo = manifest.icon || manifest.logo || undefined;
 
-      addAddon({ url, name });
+      addAddon({ url, name, logo });
       
       toast({
         title: "Addon instalado!",
@@ -74,7 +75,7 @@ function SettingsPage() {
         </Button>
         <div className="flex items-center justify-center gap-2">
           <h1 className="font-heading font-bold text-3xl">Configurações Addons</h1>
-          <Puzzle  className="h-8 w-8 text-white" />
+         
         </div>
       </header>
 
@@ -90,7 +91,7 @@ function SettingsPage() {
               <Input 
                 value={currentUrl} 
                 onChange={(e) => setCurrentUrl(e.target.value)} 
-                placeholder="https://torrentio.strem.fun/manifest.json"
+                placeholder="https://alguma-coisa.fun/manifest.json"
                 className="flex-1"
                 disabled={isLoading}
               />
@@ -117,8 +118,9 @@ function SettingsPage() {
           ) : (
             <ul className="space-y-3">
               {addons.map((addon) => (
-                <li key={addon.url} className="flex items-center justify-between p-4 rounded-lg bg-background border border-border/50">
-                  <div className="flex flex-col overflow-hidden pr-4">
+                <li key={addon.url} className="flex items-center justify-between p-4 rounded-lg bg-background border border-border/50 gap-4">
+                  <AddonIcon logo={addon.logo} name={addon.name} />
+                  <div className="flex flex-col overflow-hidden flex-1 min-w-0">
                     <span className="font-medium text-foreground truncate">{addon.name}</span>
                     <span className="text-xs text-muted-foreground truncate">{addon.url}</span>
                   </div>
@@ -137,6 +139,27 @@ function SettingsPage() {
         </div>
 
       </div>
+    </div>
+  );
+}
+
+function AddonIcon({ logo, name }: { logo?: string; name: string }) {
+  const [hasError, setHasError] = useState(false);
+
+  if (logo && !hasError) {
+    return (
+      <img 
+        src={logo} 
+        alt={name} 
+        className="w-10 h-10 rounded-lg object-cover bg-secondary/20 flex-shrink-0 border border-white/5" 
+        onError={() => setHasError(true)}
+      />
+    );
+  }
+
+  return (
+    <div className="w-10 h-10 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary flex-shrink-0">
+      <Puzzle className="w-5 h-5" />
     </div>
   );
 }
