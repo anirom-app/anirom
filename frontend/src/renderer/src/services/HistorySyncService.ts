@@ -20,9 +20,13 @@ class HistorySyncService {
     window.addEventListener('online', this.syncOfflineQueue.bind(this));
     
     // Listen to IPC events from Electron
-    window.electron.ipcRenderer.on('sync-history', async (_event, payload: HistoryPayload) => {
-      await this.pushHistory(payload);
-    });
+    if (window.electron && window.electron.ipcRenderer) {
+      window.electron.ipcRenderer.on('sync-history', async (_event, payload: HistoryPayload) => {
+        await this.pushHistory(payload);
+      });
+    } else {
+      console.warn('[HistorySync] window.electron is undefined. Cannot register IPC events.');
+    }
   }
 
   private async pushHistory(payload: HistoryPayload) {

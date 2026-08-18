@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate, Outlet, useMatchRoute } from '@tanstack/react-router'
-import { useState } from "react";
-import { Loader2, Play, Info, Check, Bookmark } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { Loader2, Play, Info, Check, Bookmark, ChevronLeft, ChevronRight } from "lucide-react";
 import { trpc } from "@/main";
 import { useAuthStore } from "@/hooks/useAuthStore";
 import { Navbar } from "@/components/Navbar";
@@ -35,6 +35,32 @@ function AnimeDetailsPage() {
   const toggleSaveMutation = trpc.toggleSavedAnime.useMutation();
 
   const isLoading = isLoadingAnime;
+
+  const rowRef = useRef<HTMLDivElement>(null);
+  const [showLeft, setShowLeft] = useState(false);
+  const [showRight, setShowRight] = useState(false);
+
+  const checkScroll = () => {
+    if (rowRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = rowRef.current;
+      setShowLeft(scrollLeft > 0);
+      setShowRight(Math.ceil(scrollLeft + clientWidth) < scrollWidth);
+    }
+  };
+
+  useEffect(() => {
+    checkScroll();
+    window.addEventListener('resize', checkScroll);
+    return () => window.removeEventListener('resize', checkScroll);
+  }, [episodes]);
+
+  const scroll = (direction: 'left' | 'right') => {
+    if (rowRef.current) {
+      const { scrollLeft, clientWidth } = rowRef.current;
+      const scrollTo = direction === 'left' ? scrollLeft - clientWidth : scrollLeft + clientWidth;
+      rowRef.current.scrollTo({ left: scrollTo, behavior: 'smooth' });
+    }
+  };
 
   // Se não estivermos na rota exata (ou seja, estamos na rota de episódio), renderiza apenas o filho
   if (!isExact) {
@@ -195,7 +221,22 @@ function AnimeDetailsPage() {
           </div>
 
           {/* Episode Carousel */}
-          <div className="flex overflow-x-auto gap-4 pb-8 pt-2 scrollbar-hide snap-x -mr-12 md:-mr-24 pr-12 md:pr-24">
+          <div className="relative group/carousel -mr-12 md:-mr-24">
+            {showLeft && (
+              <button 
+                onClick={() => scroll('left')}
+                className="absolute left-4 top-1/2 -translate-y-1/2 z-50 bg-white/80 hover:bg-white text-black p-3 rounded-full shadow-xl transition-all flex items-center justify-center backdrop-blur-sm opacity-0 group-hover/carousel:opacity-100"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+            )}
+
+            <div 
+              ref={rowRef}
+              onScroll={checkScroll}
+              className="flex overflow-x-auto gap-4 pb-8 pt-2 scrollbar-hide snap-x pr-12 md:pr-24 scroll-smooth"
+              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            >
             {isLoadingEpisodes && anime ? (
               <div className="flex w-full items-center justify-center py-12">
                 <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -241,6 +282,16 @@ function AnimeDetailsPage() {
             
             {episodes.length === 0 && !isLoadingEpisodes && (
               <p className="text-muted-foreground py-8">Nenhum episódio encontrado para esta temporada.</p>
+            )}
+            </div>
+
+            {showRight && (
+              <button 
+                onClick={() => scroll('right')}
+                className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 z-50 bg-white/80 hover:bg-white text-black p-3 rounded-full shadow-xl transition-all flex items-center justify-center backdrop-blur-sm opacity-0 group-hover/carousel:opacity-100"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
             )}
           </div>
           

@@ -7,7 +7,7 @@ import { useNotifications, Notification } from '@/hooks/useNotifications'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { trpc } from '@/main'
-import dragonBg from '@/assets/images/dragon-bg.jpg'
+import AniromPerson from '@/assets/images/person/anirom-person.png'
 
 export const Route = createFileRoute('/notifications')({
   component: NotificationsPage,
@@ -156,23 +156,27 @@ function NotificationItem({ notification, index, onDelete, onMarkAsRead }: { not
 export function NotificationsPage() {
   const { notifications, loading, unreadCount, hasMore, loadMore, markAllAsRead, markAsRead, deleteNotification } = useNotifications()
   const [showArchived, setShowArchived] = useState(false);
-
+  const [showAllUnread, setShowAllUnread] = useState(false);
+  const [showAllRead, setShowAllRead] = useState(false);
+  
   const unreadNotifications = notifications.filter(n => !n.read);
   const readNotifications = notifications.filter(n => n.read);
+  
+  const displayedUnread = showAllUnread ? unreadNotifications : unreadNotifications.slice(0, 3);
+  const displayedRead = showAllRead ? readNotifications : readNotifications.slice(0, 3);
 
   return (
     <main className="flex-1 ml-0 md:ml-20 relative min-h-screen overflow-x-hidden pt-24 px-6 md:px-8 pb-20">
-      {/* Dragon Background Overlay Leaning on Header */}
+      {/* Full Body Character Watermark */}
       <div 
-        className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[527px] z-0 pointer-events-none opacity-60"
+        className="fixed bottom-0 right-0 w-[50vw] max-w-[700px] h-[85vh] z-0 pointer-events-none opacity-25"
         style={{
-          backgroundImage: `url(${dragonBg})`,
-          backgroundSize: '100% auto',
-          backgroundPosition: 'top center',
+          backgroundImage: `url(${AniromPerson})`,
+          backgroundSize: 'contain',
+          backgroundPosition: 'bottom right',
           backgroundRepeat: 'no-repeat',
-          mixBlendMode: 'screen',
-          maskImage: 'linear-gradient(to bottom, black 0%, transparent 100%)',
-          WebkitMaskImage: 'linear-gradient(to bottom, black 40%, transparent 100%)'
+          maskImage: 'linear-gradient(to left, black 40%, transparent 100%)',
+          WebkitMaskImage: 'linear-gradient(to left, black 40%, transparent 100%)'
         }}
       />
       <div className="max-w-4xl mx-auto relative z-10">
@@ -236,7 +240,7 @@ export function NotificationsPage() {
                 </div>
                 <div className="flex flex-col gap-3">
                   <AnimatePresence>
-                    {unreadNotifications.map((notification, index) => (
+                    {displayedUnread.map((notification, index) => (
                       <NotificationItem 
                         key={notification.id} 
                         notification={notification} 
@@ -246,6 +250,27 @@ export function NotificationsPage() {
                       />
                     ))}
                   </AnimatePresence>
+                  
+                  {unreadNotifications.length > 3 && !showAllUnread && (
+                    <Button 
+                      variant="ghost" 
+                      onClick={() => setShowAllUnread(true)}
+                      className="mt-2 text-zinc-400 hover:text-white border border-white/5 bg-black/20 hover:bg-white/5 rounded-xl w-full"
+                    >
+                      <ChevronDown className="w-4 h-4 mr-2" />
+                      Ver mais ({unreadNotifications.length - 3})
+                    </Button>
+                  )}
+                  {unreadNotifications.length > 3 && showAllUnread && (
+                    <Button 
+                      variant="ghost" 
+                      onClick={() => setShowAllUnread(false)}
+                      className="mt-2 text-zinc-400 hover:text-white border border-white/5 bg-black/20 hover:bg-white/5 rounded-xl w-full"
+                    >
+                      <ChevronUp className="w-4 h-4 mr-2" />
+                      Ocultar
+                    </Button>
+                  )}
                 </div>
               </div>
             )}
@@ -278,7 +303,7 @@ export function NotificationsPage() {
                       className="overflow-hidden"
                     >
                       <div className="flex flex-col gap-3 mt-4 opacity-80 hover:opacity-100 transition-opacity duration-500">
-                        {readNotifications.map((notification, index) => (
+                        {displayedRead.map((notification, index) => (
                           <NotificationItem 
                             key={notification.id} 
                             notification={notification} 
@@ -288,6 +313,27 @@ export function NotificationsPage() {
                           />
                         ))}
                       </div>
+                      
+                      {readNotifications.length > 3 && !showAllRead && (
+                        <Button 
+                          variant="ghost" 
+                          onClick={() => setShowAllRead(true)}
+                          className="w-full mt-3 text-zinc-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-xl"
+                        >
+                          <ChevronDown className="w-4 h-4 mr-2" />
+                          Ver mais antigas ({readNotifications.length - 3})
+                        </Button>
+                      )}
+                      {readNotifications.length > 3 && showAllRead && (
+                        <Button 
+                          variant="ghost" 
+                          onClick={() => setShowAllRead(false)}
+                          className="w-full mt-3 text-zinc-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-xl"
+                        >
+                          <ChevronUp className="w-4 h-4 mr-2" />
+                          Ocultar antigas
+                        </Button>
+                      )}
                     </motion.div>
                   )}
                 </AnimatePresence>

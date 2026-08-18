@@ -68,7 +68,7 @@ export function Navbar() {
         {/* Main Nav Items */}
         <div className="flex flex-row md:flex-col gap-2 md:gap-6 flex-1 md:mt-4 items-center justify-center">
           {navItems.map((item, idx) => {
-            const isActive = pathname === item.href;
+            const isActive = pathname === item.to;
             
             const linkContent = (
               <Link 
@@ -76,7 +76,7 @@ export function Navbar() {
                 to={item.to}
                 className={cn(
                   "p-3 rounded-xl transition-all group relative flex items-center justify-center",
-                  isActive ? "bg-white/10 text-white" : "text-muted-foreground hover:text-white hover:bg-white/5"
+                  isActive ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-white hover:bg-white/5"
                 )}
                 title={item.label}
               >
@@ -158,11 +158,11 @@ export function Navbar() {
           <Link 
             to="/settings"
             className={cn(
-              "p-3 rounded-xl transition-all text-muted-foreground hover:text-white hover:bg-white/5 group relative",
-              pathname === "/settings" && "bg-white/10 text-white"
+              "p-3 rounded-xl transition-all group relative",
+              pathname === "/settings" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-white hover:bg-white/5"
             )}
           >
-            <Puzzle className="w-5 h-5 md:w-6 md:h-6" strokeWidth={2} />
+            <Puzzle className="w-5 h-5 md:w-6 md:h-6" strokeWidth={pathname === "/settings" ? 2.5 : 2} />
             <span className="absolute left-14 bg-popover text-popover-foreground text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
               Settings
             </span>

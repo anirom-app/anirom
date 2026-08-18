@@ -48,7 +48,7 @@ export function AnimeCarousel({ title, animes, onViewMore }: AnimeCarouselProps)
         {showLeft && (
           <button 
             onClick={() => scroll('left')}
-            className="absolute left-4 top-1/2 -translate-y-1/2 z-20 bg-white/80 hover:bg-white text-black p-3 rounded-full shadow-xl transition-all flex items-center justify-center backdrop-blur-sm opacity-0 group-hover/carousel:opacity-100"
+            className="absolute left-4 top-1/2 -translate-y-1/2 z-50 bg-white/80 hover:bg-white text-black p-3 rounded-full shadow-xl transition-all flex items-center justify-center backdrop-blur-sm opacity-0 group-hover/carousel:opacity-100"
           >
             <ChevronLeft className="w-5 h-5" />
           </button>
@@ -78,7 +78,7 @@ export function AnimeCarousel({ title, animes, onViewMore }: AnimeCarouselProps)
         {showRight && (
           <button 
             onClick={() => scroll('right')}
-            className="absolute right-4 top-1/2 -translate-y-1/2 z-20 bg-white/80 hover:bg-white text-black p-3 rounded-full shadow-xl transition-all flex items-center justify-center backdrop-blur-sm opacity-0 group-hover/carousel:opacity-100"
+            className="absolute right-4 top-1/2 -translate-y-1/2 z-50 bg-white/80 hover:bg-white text-black p-3 rounded-full shadow-xl transition-all flex items-center justify-center backdrop-blur-sm opacity-0 group-hover/carousel:opacity-100"
           >
             <ChevronRight className="w-5 h-5" />
           </button>
