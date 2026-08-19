@@ -2,3 +2,16 @@ frontend/bin/
 frontend/bin/mpv/mpv.exe
 .vscode/
 .idea/
+
+# Frontend ignores
+frontend/node_modules/
+frontend/dist/
+frontend/out/
+frontend/.env*
+frontend/npm-debug.log*
+frontend/yarn-error.log*
+frontend/.pnp*
+frontend/.yarn/
+frontend/coverage/
+frontend/.next/
+frontend/bin/go-engine.exefrontend/*.tsbuildinfo

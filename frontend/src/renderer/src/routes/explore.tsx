@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
 import { keepPreviousData } from '@tanstack/react-query'
 import { trpc } from '@/main'
+import { useExploreStore } from '@/hooks/useExploreStore'
 import { Navbar } from '@/components/Navbar'
 import { AnimeCard } from '@/components/AnimeCard'
 import { AnimeCarousel } from '@/components/AnimeCarousel'
@@ -42,9 +43,7 @@ function GenreRow({ genre, sortBy, onViewMore }: { genre: { id: string; name: st
 }
 
 function ExplorePage() {
-  const [page, setPage] = useState(1)
-  const [sortBy, setSortBy] = useState('popularity.desc')
-  const [selectedGenres, setSelectedGenres] = useState<string[]>([])
+  const { page, setPage, sortBy, setSortBy, selectedGenres, setSelectedGenres } = useExploreStore()
   
   // Popover state
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false)
