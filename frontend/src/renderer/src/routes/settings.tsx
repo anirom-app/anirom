@@ -18,13 +18,17 @@ const addonSchema = z.string().url("A URL deve ser válida.").endsWith("manifest
 
 function SettingsPage() {
   const navigate = useNavigate();
-  const { addons, addAddon, removeAddon } = useAddonStore();
+  const { addons, addAddon, removeAddon, fetchUserAddons } = useAddonStore();
   const [currentUrl, setCurrentUrl] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const { toast } = useToast();
   const { isProxyEnabled, customProxies } = useProxyStore();
   const utils = trpc.useUtils();
+
+  useEffect(() => {
+    fetchUserAddons();
+  }, [fetchUserAddons]);
 
   const handleSave = async () => {
     setError("");
@@ -52,11 +56,11 @@ function SettingsPage() {
       const name = manifest.name || "Addon Desconhecido";
       const logo = manifest.icon || manifest.logo || undefined;
 
-      addAddon({ url, name, logo });
+      await addAddon({ url, name, logo });
       
       toast({
         title: "Addon instalado!",
-        description: `${name} foi adicionado com sucesso.`,
+        description: `${name} foi salvo na sua conta com sucesso.`,
       });
       setCurrentUrl("");
     } catch (err) {

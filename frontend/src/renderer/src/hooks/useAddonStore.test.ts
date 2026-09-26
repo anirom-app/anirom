@@ -42,4 +42,11 @@ describe('useAddonStore', () => {
     expect(state.addons).toHaveLength(1);
     expect(state.addons[0].url).toBe(addon2.url);
   });
+
+  it('deve resetar para o addon padrao Torrentio', () => {
+    useAddonStore.getState().resetAddons();
+    const state = useAddonStore.getState();
+    expect(state.addons).toHaveLength(1);
+    expect(state.addons[0].name).toBe('Torrentio');
+  });
 });

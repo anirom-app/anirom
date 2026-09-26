@@ -128,6 +128,13 @@ export function useNotifications() {
               store.setNotifications(prev => [newNotification, ...prev]);
               if (!newNotification.read) {
                 store.setUnreadCount(prev => prev + 1);
+                // Dispara o popup (Toast) na tela
+                import('@/hooks/use-toast').then(({ toast }) => {
+                  toast({
+                    title: newNotification.title,
+                    description: newNotification.message,
+                  });
+                });
               }
             }
           } catch (err) {
