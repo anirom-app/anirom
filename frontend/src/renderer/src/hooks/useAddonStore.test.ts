@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach } from 'vitest';
 import { useAddonStore } from './useAddonStore';
 
 describe('useAddonStore', () => {
@@ -43,10 +44,13 @@ describe('useAddonStore', () => {
     expect(state.addons[0].url).toBe(addon2.url);
   });
 
-  it('deve resetar para o addon padrao Torrentio', () => {
+  it('deve resetar os addons para lista vazia', () => {
+    const addon = { url: 'https://test.com/manifest.json', name: 'Test Addon' };
+    useAddonStore.getState().addAddon(addon);
+    expect(useAddonStore.getState().addons).toHaveLength(1);
+
     useAddonStore.getState().resetAddons();
     const state = useAddonStore.getState();
-    expect(state.addons).toHaveLength(1);
-    expect(state.addons[0].name).toBe('Torrentio');
+    expect(state.addons).toEqual([]);
   });
 });

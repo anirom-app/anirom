@@ -33,7 +33,6 @@ export function Navbar() {
     { icon: Home, label: "Início", to: "/" },
     { icon: Bookmark, label: "Salvos", to: "/salvos" },
     { icon: ListSortDescending, label: "Categorias", to: "/explore" },
-    { icon: Zap, label: "Trending", to: "/trending" },
     { icon: Bell, label: "Notifications", to: "/notifications" },
   ];
 
@@ -58,7 +57,7 @@ export function Navbar() {
         </form>
       </div>
 
-      <nav className="fixed bottom-0 left-0 w-full md:w-20 h-16 md:h-screen md:top-0 z-50 bg-[#0a0a0a]/95 backdrop-blur-xl border-t md:border-t-0 md:border-r border-border/10 flex flex-row md:flex-col items-center justify-around md:justify-start py-0 md:py-6 gap-0 md:gap-8">
+      <nav className="fixed bottom-0 left-0 w-full md:w-20 h-16 md:h-screen md:top-0 z-50 bg-[#0a0a0a]/95 backdrop-blur-xl border-t md:border-t-0 md:border-r border-border/10 flex flex-row md:flex-col items-center justify-around md:justify-start py-0 md:py-6 gap-0 md:gap-6">
         
         {/* Logo (Hidden on Mobile) */}
         <Link to="/" className="hidden md:flex items-center justify-center w-16 h-16 rounded-full hover:scale-105 transition-transform shadow-lg">
@@ -66,7 +65,7 @@ export function Navbar() {
         </Link>
 
         {/* Main Nav Items */}
-        <div className="flex flex-row md:flex-col gap-2 md:gap-6 flex-1 md:mt-4 items-center justify-center">
+        <div className="flex flex-row md:flex-col gap-2 md:gap-4 flex-1 md:flex-initial items-center justify-around md:justify-start md:mt-8">
           {navItems.map((item, idx) => {
             const isActive = pathname === item.to;
             
@@ -154,7 +153,7 @@ export function Navbar() {
         </div>
 
         {/* Bottom Actions (Settings & Profile) */}
-        <div className="flex flex-row md:flex-col gap-2 md:gap-6 md:mb-4 items-center pr-2 md:pr-0">
+        <div className="flex flex-row md:flex-col gap-2 md:gap-6 md:mt-auto md:mb-4 items-center pr-2 md:pr-0">
           <Link 
             to="/settings"
             className={cn(

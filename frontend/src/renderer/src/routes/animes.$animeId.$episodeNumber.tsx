@@ -73,13 +73,17 @@ function EpisodePlayer() {
           throw new Error("IMDb ID não encontrado no TMDb para esta obra.");
         }
 
-        setStatus("Resolvendo mapeamento no Kitsu...");
+        setStatus("Carregando players...");
         let kitsuId = null;
         try {
           const { data: mappingData } = await api.get(`/mappings/kitsu?imdbId=${imdbId}&tmdbId=${animeId}`);
           kitsuId = mappingData.kitsuId;
         } catch (err: any) {
           console.warn("Mapeamento Kitsu não encontrado, tentando via IMDb direto...");
+        }
+
+        if (addons.length === 0) {
+          throw new Error("Nenhum addon de fontes configurado. Acesse as Configurações para adicionar um addon.");
         }
 
         setStatus("Buscando fontes...");

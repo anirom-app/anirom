@@ -4,7 +4,7 @@ import { persist } from "zustand/middleware";
 interface AuthState {
   token: string | null;
   user: { nickname?: string; photoUrl?: string; role?: string } | null;
-  setToken: (token: string, user?: { nickname?: string; photoUrl?: string; role?: string }) => void;
+  setToken: (token: string, user?: { nickname?: string; photoUrl?: string; role?: string } | null) => void;
   logout: () => void;
 }
 

@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import { api } from '@/services/api';
 import { useAuthStore } from '@/hooks/useAuthStore';
 
@@ -18,13 +19,13 @@ interface AddonState {
   resetAddons: () => void;
 }
 
-const DEFAULT_ADDONS: Addon[] = [
-  { url: 'https://torrentio.strem.fun/manifest.json', name: 'Torrentio', logo: 'https://torrentio.strem.fun/static/logo.png' }
-];
+const DEFAULT_ADDONS: Addon[] = [];
 
-export const useAddonStore = create<AddonState>((set) => ({
-  addons: DEFAULT_ADDONS,
-  isLoading: false,
+export const useAddonStore = create<AddonState>()(
+  persist(
+    (set) => ({
+      addons: DEFAULT_ADDONS,
+      isLoading: false,
 
   fetchUserAddons: async () => {
     const token = useAuthStore.getState().token;
@@ -82,5 +83,10 @@ export const useAddonStore = create<AddonState>((set) => ({
     }
   },
 
-  resetAddons: () => set({ addons: DEFAULT_ADDONS }),
-}));
+    resetAddons: () => set({ addons: DEFAULT_ADDONS }),
+  }),
+  {
+    name: 'anirom-addons-storage',
+    partialize: (state) => ({ addons: state.addons }),
+  }
+));

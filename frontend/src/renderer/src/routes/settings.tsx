@@ -3,7 +3,7 @@ import { useAddonStore } from "@/hooks/useAddonStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft, Save, Trash2, Loader2, AlertCircle, Puzzle } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { useProxyStore } from "@/hooks/useProxyStore";

@@ -19,6 +19,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
+import { Checkbox } from "@/components/ui/checkbox";
 import { trpc } from '@/main';
 
 export const Route = createFileRoute('/register')({
@@ -36,6 +37,9 @@ const formSchema = z.object({
     .regex(/\d/, "A senha deve conter pelo menos um número")
     .regex(/[^a-zA-Z0-9]/, "A senha deve conter pelo menos um caractere especial"),
   photo: z.custom<FileList | null>().optional(),
+  termsAccepted: z.boolean().refine((val) => val === true, {
+    message: "Você deve aceitar os Termos de Uso e Política de Privacidade.",
+  }),
 });
 
 function RegisterPage() {
@@ -52,6 +56,7 @@ function RegisterPage() {
       nickname: "",
       email: "",
       password: "",
+      termsAccepted: false,
     },
   });
 
@@ -186,6 +191,28 @@ function RegisterPage() {
                     />
                   </FormControl>
                   <FormMessage className="text-xs text-red-400" />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="termsAccepted"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-2 space-y-0 pt-2">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                      className="h-4 w-4 border-white/50 data-[state=checked]:bg-white data-[state=checked]:text-primary mt-0.5"
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel className="text-[11px] font-normal text-white/80 tracking-wide cursor-pointer">
+                      Li e concordo com os <span className="underline font-medium text-white">Termos de Uso</span> e a <span className="underline font-medium text-white">Política de Privacidade</span>.
+                    </FormLabel>
+                    <FormMessage className="text-xs text-red-400" />
+                  </div>
                 </FormItem>
               )}
             />

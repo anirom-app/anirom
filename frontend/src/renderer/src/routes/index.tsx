@@ -8,6 +8,7 @@ import { ContinueWatchingRow } from "@/components/ContinueWatchingRow";
 import { Button } from "@/components/ui/button";
 import { Bookmark, Loader2, Check } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { useExploreStore } from "@/hooks/useExploreStore";
 
 export const Route = createFileRoute('/')({
   component: Home,
@@ -43,6 +44,21 @@ function Home() {
   // Random anime mutation (simulated)
   const [isSurpriseLoading, setIsSurpriseLoading] = useState(false);
   const { refetch: fetchRandomAnime } = trpc.getRandomAnime.useQuery(undefined, { enabled: false });
+
+  const handleCategoryViewMore = (genreId: string) => {
+    useExploreStore.getState().setSelectedGenres([genreId]);
+    useExploreStore.getState().setPage(1);
+    navigate({ to: '/explore' });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleSortViewMore = (sortBy: string) => {
+    useExploreStore.getState().setSelectedGenres([]);
+    useExploreStore.getState().setSortBy(sortBy);
+    useExploreStore.getState().setPage(1);
+    navigate({ to: '/explore' });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   useEffect(() => {
     setIsHydrated(true);
@@ -262,12 +278,32 @@ function Home() {
 
         <div className="w-full space-y-12 pt-2 relative z-20 pb-20">
           <AnimeCarousel title="Para Você" animes={forYou} />
-          <AnimeCarousel title="Ação" animes={actionAnimes} />
+          <AnimeCarousel 
+            title="Ação" 
+            animes={actionAnimes} 
+            onViewMore={() => handleCategoryViewMore('10759')} 
+          />
           <ContinueWatchingRow />
-          <AnimeCarousel title="Mistério" animes={horror} />
-          <AnimeCarousel title="Fantasia" animes={fantasy} />
-          <AnimeCarousel title="Em Alta" animes={trending} />
-          <AnimeCarousel title="Mais Bem Avaliados" animes={topRated} />
+          <AnimeCarousel 
+            title="Mistério" 
+            animes={horror} 
+            onViewMore={() => handleCategoryViewMore('9648')} 
+          />
+          <AnimeCarousel 
+            title="Fantasia" 
+            animes={fantasy} 
+            onViewMore={() => handleCategoryViewMore('10765')} 
+          />
+          <AnimeCarousel 
+            title="Em Alta" 
+            animes={trending} 
+            onViewMore={() => handleSortViewMore('popularity.desc')} 
+          />
+          <AnimeCarousel 
+            title="Mais Bem Avaliados" 
+            animes={topRated} 
+            onViewMore={() => handleSortViewMore('vote_average.desc')} 
+          />
           
           <div className="flex justify-center pt-12 pb-8">
             <button 

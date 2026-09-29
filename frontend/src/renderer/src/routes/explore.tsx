@@ -47,7 +47,16 @@ function ExplorePage() {
   
   // Popover state
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false)
-  const [tempSelectedGenres, setTempSelectedGenres] = useState<string[]>([])
+  const [tempSelectedGenres, setTempSelectedGenres] = useState<string[]>(selectedGenres)
+
+  useEffect(() => {
+    setTempSelectedGenres(selectedGenres)
+  }, [selectedGenres])
+
+  // Scroll to top on mount
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [])
 
   // Only used when there are filters applied
   const { data, isLoading, isPlaceholderData } = trpc.getExploreAnimes.useQuery(

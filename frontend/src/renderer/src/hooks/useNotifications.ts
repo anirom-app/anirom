@@ -106,6 +106,8 @@ export function useNotifications() {
 
     const controller = new AbortController();
 
+    let retryAttempts = 0;
+
     const connect = () => {
       fetchEventSource(`${api.defaults.baseURL}/notifications/stream?userId=${userId}`, {
         method: "GET",
@@ -116,6 +118,7 @@ export function useNotifications() {
         async onopen(res) {
           if (res.ok && res.status === 200) {
             console.log("SSE conectado com sucesso");
+            retryAttempts = 0; // Reset backoff on success
           } else {
             throw new Error(`SSE error status: ${res.status}`);
           }
@@ -145,16 +148,20 @@ export function useNotifications() {
           console.warn("SSE connection closed");
         },
         onerror(err) {
-          console.error("SSE connection error", err);
-          return 5000;
+          const delay = Math.min(30000, Math.pow(2, retryAttempts) * 1000 + Math.random() * 500);
+          retryAttempts++;
+          console.error(`SSE connection error, retrying in ${Math.round(delay)}ms`, err);
+          return delay;
         }
       }).catch(err => {
-        console.error("SSE fatal error, retrying manually in 5s...", err);
+        const delay = Math.min(30000, Math.pow(2, retryAttempts) * 1000 + Math.random() * 500);
+        retryAttempts++;
+        console.error(`SSE fatal error, retrying manually in ${Math.round(delay)}ms...`, err);
         setTimeout(() => {
           if (!controller.signal.aborted) {
             connect();
           }
-        }, 5000);
+        }, delay);
       });
     };
 
